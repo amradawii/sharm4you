@@ -4,6 +4,11 @@
     @php
         $seoKey = $seoKey ?? 'home';
         $seo = trans("seo.{$seoKey}");
+        // Packages are passed only by routes that show the booking modal
+        // (home, services). Other pages get an empty collection so the modal
+        // gate and asset includes stay no-ops without a per-page query.
+        $packages = $packages ?? collect();
+        $packagesSlots = $packagesSlots ?? [];
     @endphp
 
     <meta charset="UTF-8">

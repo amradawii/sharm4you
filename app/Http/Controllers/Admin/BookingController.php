@@ -9,7 +9,6 @@ use App\Http\Requests\Admin\UploadBookingPhotoRequest;
 use App\Models\Booking;
 use App\Models\BookingPhoto;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -120,7 +119,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function updateStatus(Request $request, Booking $booking): RedirectResponse
+    public function updateStatus(Request $request, Booking $booking): JsonResponse
     {
         // Admin bookings only move between confirmed and completed.
         $request->validate([
@@ -129,9 +128,11 @@ class BookingController extends Controller
 
         $booking->update(['status' => $request->input('status')]);
 
-        return redirect()
-            ->back()
-            ->with('success', 'Status updated successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Status updated successfully.',
+            'booking' => $this->serializeBooking($booking->fresh('package')),
+        ]);
     }
 
     public function updateNotes(Request $request, Booking $booking): JsonResponse

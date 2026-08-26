@@ -50,19 +50,19 @@
     {{-- Table --}}
     <div class="admin-card mt-6 overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[1000px] text-left text-sm">
+            <table class="w-full min-w-[760px] text-left text-sm">
                 <thead class="border-b border-sharm-deep/10 bg-sharm-sand/50 text-xs uppercase tracking-wider text-sharm-mist">
                     <tr>
                         <th class="px-4 py-3 font-semibold">Booking #</th>
                         <th class="px-4 py-3 font-semibold">Source</th>
                         <th class="px-4 py-3 font-semibold">Customer</th>
                         <th class="px-4 py-3 font-semibold">Phone</th>
-                        <th class="px-4 py-3 font-semibold">Email</th>
-                        <th class="px-4 py-3 font-semibold">Package</th>
-                        <th class="px-4 py-3 font-semibold">Session</th>
-                        <th class="px-4 py-3 font-semibold">Amount</th>
+                        <th class="hidden lg:table-cell px-4 py-3 font-semibold">Email</th>
+                        <th class="hidden md:table-cell px-4 py-3 font-semibold">Package</th>
+                        <th class="hidden md:table-cell px-4 py-3 font-semibold">Session</th>
+                        <th class="hidden sm:table-cell px-4 py-3 font-semibold">Amount</th>
                         <th class="px-4 py-3 font-semibold">Status</th>
-                        <th class="px-4 py-3 font-semibold">Received</th>
+                        <th class="hidden lg:table-cell px-4 py-3 font-semibold">Received</th>
                         <th class="px-4 py-3 font-semibold">Actions</th>
                     </tr>
                 </thead>
@@ -82,38 +82,30 @@
                             <td class="px-4 py-3">
                                 <a href="tel:{{ $booking->country_code }}{{ preg_replace('/\s+/', '', $booking->phone) }}" class="text-sharm-sea hover:underline">{{ $booking->full_phone }}</a>
                             </td>
-                            <td class="px-4 py-3 text-sharm-mist">
+                            <td class="hidden lg:table-cell px-4 py-3 text-sharm-mist">
                                 @if ($booking->email)
                                     <a href="mailto:{{ $booking->email }}" class="text-sharm-sea hover:underline">{{ $booking->email }}</a>
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-sharm-mist">{{ $booking->package?->name_en ?? '—' }}</td>
-                            <td class="px-4 py-3 text-xs text-sharm-mist">{{ $booking->session_datetime_label }}</td>
-                            <td class="px-4 py-3 whitespace-nowrap font-medium text-sharm-deep">{{ $booking->amount_label }}</td>
+                            <td class="hidden md:table-cell px-4 py-3 text-sharm-mist">{{ $booking->package?->name_en ?? '—' }}</td>
+                            <td class="hidden md:table-cell px-4 py-3 text-xs text-sharm-mist">{{ $booking->session_datetime_label }}</td>
+                            <td class="hidden sm:table-cell px-4 py-3 whitespace-nowrap font-medium text-sharm-deep">{{ $booking->amount_label }}</td>
                             <td class="px-4 py-3">
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.bookings.status', $booking) }}"
-                                    class="inline-block"
+                                <select
+                                    class="admin-status-select {{ $booking->status_color }}"
+                                    data-booking-id="{{ $booking->id }}"
+                                    @change="changeStatus({{ $booking->id }}, $event.target.value, $event.target)"
                                 >
-                                    @csrf
-                                    @method('PATCH')
-                                    <select
-                                        name="status"
-                                        class="admin-status-select {{ $booking->status_color }}"
-                                        onchange="this.form.submit()"
-                                    >
-                                        @foreach ($booking->allowedStatuses() as $status)
-                                            <option value="{{ $status }}" @selected($booking->status === $status)>
-                                                {{ ucfirst($status) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </form>
+                                    @foreach ($booking->allowedStatuses() as $status)
+                                        <option value="{{ $status }}" @selected($booking->status === $status)>
+                                            {{ ucfirst($status) }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </td>
-                            <td class="px-4 py-3 text-xs text-sharm-mist">{{ $booking->created_at->format('M j, Y g:i A') }}</td>
+                            <td class="hidden lg:table-cell px-4 py-3 text-xs text-sharm-mist">{{ $booking->created_at->format('M j, Y g:i A') }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-1">
                                     <a
@@ -509,6 +501,38 @@ function bookingManager() {
                 window.showToast('error', 'Network error.')
             } finally {
                 this.submitting = false
+            }
+        },
+
+        async changeStatus(bookingId, newStatus, selectEl) {
+            const previousValue = selectEl.dataset.previousValue || selectEl.querySelector('option[selected]')?.value
+            selectEl.dataset.previousValue = newStatus
+            selectEl.disabled = true
+            try {
+                const res = await fetch(`{{ url('admin/bookings') }}/${bookingId}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': this.csrf,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ status: newStatus }),
+                })
+                const data = await res.json()
+                if (res.ok) {
+                    // Update the badge color in place from the server response.
+                    selectEl.className = 'admin-status-select ' + data.booking.status_color
+                    window.showToast('success', data.message)
+                } else {
+                    // Revert the select to the previous value on failure.
+                    selectEl.value = previousValue || newStatus
+                    window.toastFromResponse(data, 'Failed to update status.')
+                }
+            } catch (e) {
+                selectEl.value = previousValue || newStatus
+                window.showToast('error', 'Network error. Please try again.')
+            } finally {
+                selectEl.disabled = false
             }
         },
     }

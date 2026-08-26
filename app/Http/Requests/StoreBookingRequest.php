@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use App\Models\Package;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreBookingRequest extends FormRequest
 {
@@ -15,20 +14,15 @@ class StoreBookingRequest extends FormRequest
 
     public function rules(): array
     {
-        $localeCurrency = config('currencies.locale_map.'.app()->getLocale(), 'USD');
-
+        // Existence + active + locale-currency + slot membership are all checked
+        // in a single DB fetch inside withValidator()->after(), so rules() stays
+        // structural only (no closure query that would duplicate the fetch).
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9\s\-]+$/'],
             'country_code' => ['required', 'string', 'max:5', 'regex:/^\+\d{1,4}$/'],
             'email' => ['nullable', 'email', 'max:255'],
-            'package_id' => [
-                'required',
-                Rule::exists('packages', 'id')->where(function ($query) use ($localeCurrency) {
-                    $query->where('is_active', true)
-                        ->where('currency', $localeCurrency);
-                }),
-            ],
+            'package_id' => ['required', 'integer'],
             'session_date' => ['required', 'date', 'after_or_equal:today'],
             'session_time' => ['required', 'string', 'max:5', 'regex:/^\d{2}:\d{2}$/'],
         ];
@@ -41,18 +35,26 @@ class StoreBookingRequest extends FormRequest
             $sessionDate = $this->input('session_date');
             $sessionTime = $this->input('session_time');
 
-            if (! $packageId || ! $sessionTime) {
+            if (! $packageId) {
+                // 'required' rule already covers this; nothing to add.
                 return;
             }
 
             $localeCurrency = config('currencies.locale_map.'.app()->getLocale(), 'USD');
 
+            // Single fetch validating existence + active + locale currency.
             $package = Package::where('id', $packageId)
                 ->where('is_active', true)
                 ->where('currency', $localeCurrency)
                 ->first();
 
             if (! $package) {
+                $validator->errors()->add('package_id', 'Please select a valid package.');
+
+                return;
+            }
+
+            if (! $sessionTime) {
                 return;
             }
 
@@ -79,7 +81,8 @@ class StoreBookingRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'package_id.exists' => 'Please select a valid package.',
+            'package_id.required' => 'Please select a package.',
+            'package_id.integer' => 'Please select a valid package.',
             'phone.regex' => 'Please enter a valid phone number.',
             'country_code.regex' => 'Please select a valid country code.',
             'session_date.after_or_equal' => 'Please select today or a future date.',

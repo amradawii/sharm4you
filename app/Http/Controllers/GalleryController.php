@@ -36,7 +36,9 @@ class GalleryController extends Controller
             abort(404);
         }
 
-        $photos = $album->photos()->ordered()->get();
+        // Eager-load album so Photo::getUrlAttribute() (reads $photo->album->slug)
+        // doesn't trigger one extra query per photo on the album page.
+        $photos = $album->photos()->with('album')->ordered()->get();
 
         return view('gallery-album', compact('album', 'photos'));
     }
