@@ -256,7 +256,11 @@ return [
         'booking' => 'Booking',
         'photo_count' => '{1} :count photo|[2,*] :count photos',
         'download' => 'Download',
-        'download_hint' => 'Tap any photo to download it in full quality to your device.',
+        'download_hint' => 'Click any photo to view it full-screen, or download all at once as a zip.',
+        'download_all' => 'Download All',
+        'download_preparing' => 'Preparing...',
+        'download_done' => 'Downloaded!',
+        'download_lightbox' => 'Download this photo',
         'thanks' => 'Thank you for choosing us — we hope you love your photos!',
     ],
 

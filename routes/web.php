@@ -33,6 +33,9 @@ Route::middleware('locale')->group(function () {
     Route::post('/my-photos', [PhotoDeliveryController::class, 'show'])
         ->middleware('throttle:5,1')
         ->name('my-photos.lookup');
+    Route::post('/my-photos/download-all', [PhotoDeliveryController::class, 'downloadAll'])
+        ->middleware('throttle:3,1')
+        ->name('my-photos.download-all');
 });
 
 Route::prefix('{locale}')
@@ -60,4 +63,6 @@ Route::prefix('{locale}')
         Route::get('/my-photos', [PhotoDeliveryController::class, 'form']);
         Route::post('/my-photos', [PhotoDeliveryController::class, 'show'])
             ->middleware('throttle:5,1');
+        Route::post('/my-photos/download-all', [PhotoDeliveryController::class, 'downloadAll'])
+            ->middleware('throttle:3,1');
     });

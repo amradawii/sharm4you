@@ -256,7 +256,11 @@ return [
         'booking' => 'Prenotazione',
         'photo_count' => '{1} :count foto|[2,*] :count foto',
         'download' => 'Scarica',
-        'download_hint' => 'Tocca una foto per scaricarla in alta qualità sul tuo dispositivo.',
+        'download_hint' => 'Clicca su una foto per vederla a schermo intero, o scarica tutto in una volta come zip.',
+        'download_all' => 'Scarica tutto',
+        'download_preparing' => 'Preparazione...',
+        'download_done' => 'Scaricato!',
+        'download_lightbox' => 'Scarica questa foto',
         'thanks' => 'Grazie per averci scelto — speriamo che le tue foto ti piacciano!',
     ],
 

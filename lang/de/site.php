@@ -256,7 +256,11 @@ return [
         'booking' => 'Buchung',
         'photo_count' => '{1} :count Foto|[2,*] :count Fotos',
         'download' => 'Herunterladen',
-        'download_hint' => 'Tippen Sie auf ein Foto, um es in voller Qualität auf Ihr Gerät herunterzuladen.',
+        'download_hint' => 'Klicken Sie auf ein Foto, um es im Vollbild anzuzeigen, oder laden Sie alle auf einmal als Zip herunter.',
+        'download_all' => 'Alle herunterladen',
+        'download_preparing' => 'Wird vorbereitet...',
+        'download_done' => 'Heruntergeladen!',
+        'download_lightbox' => 'Dieses Foto herunterladen',
         'thanks' => 'Danke, dass Sie sich für uns entschieden haben — wir hoffen, Ihre Fotos gefallen Ihnen!',
     ],
 

@@ -64,6 +64,13 @@ class BookingPhoto extends Model
         return self::formatBytes($this->size);
     }
 
+    /* ── Scopes ── */
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('sort_order');
+    }
+
     /* ── Helpers ── */
 
     /**
