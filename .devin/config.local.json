@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Exec(Select-Object)",
+      "Exec(Select-String)",
+      "Exec(php artisan)",
+      "Exec(./vendor/bin/pint)"
+    ]
+  }
+}

@@ -1,0 +1,584 @@
+# Packages CMS + Book Session (Booking Orders)
+
+## Overview
+
+Two features in one pass — they depend on each other:
+
+1. **Packages CMS** — Admin can create, edit, delete, and reorder packages (name, description, price, currency, hours — all multilingual). The public home page currently renders packages from static `lang/*/site.php` arrays; this replaces that with DB-driven packages while keeping the section headings ("Sessions", "Our Packages", subtitle) static in translation files.
+
+2. **Book Session** — A simple public booking form (name, phone with `intl-tel-input` country code picker, optional email, package selection) in its own section above the existing Contact section. No payment gateway — admin reviews bookings (orders) in the admin panel and contacts the customer manually.
+
+**Static content stays static:** The packages section headings/labels and the Contact section remain unchanged. The booking form is a **new, separate section**.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TD
+    subgraph Admin Panel
+        PkgCRUD["Package CRUD\n(create/edit/delete/toggle)\ncurrency select: USD|EUR|RUB"]
+        BookingList["Bookings List\n(view/status update)"]
+    end
+
+    subgraph Backend
+        PkgModel["Package model"]
+        BookingModel["Booking model"]
+        LocaleCurrency["config/currencies.php\nlocale → currency mapping"]
+    end
+
+    subgraph Public Frontend
+        HomePage["Home /\nPackages section\n(DB packages, locale currency)"]
+        BookForm["Book Session form\n(intl-tel-input + Alpine fetch)"]
+        ContactSection["Contact section\n(unchanged — email + phone)"]
+    end
+
+    PkgCRUD --> PkgModel
+    PkgModel --> HomePage
+    LocaleCurrency --> HomePage
+    BookForm --> BookingModel
+    BookingModel --> BookingList
+    PkgModel --> BookForm
+```
+
+---
+
+## Database Schema
+
+### `packages` table
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | bigIncrements | PK |
+| `name_en` | string(255) | e.g. "2 Hours" |
+| `name_ru` | string(255) | e.g. "2 Часа" |
+| `name_it` | string(255) | e.g. "2 Ore" |
+| `description_en` | text | English description |
+| `description_ru` | text | Russian description |
+| `description_it` | text | Italian description |
+| `price` | decimal(8,2) | e.g. 150.00 |
+| `currency` | string(3) | `'USD'`, `'EUR'`, or `'RUB'` — chosen by admin per package |
+| `hours` | decimal(4,1) | e.g. 2.0, 4.0, 8.0 — for sorting/display |
+| `is_active` | boolean | Default `true` |
+| `is_featured` | boolean | Default `false` — the "Popular" badge |
+| `sort_order` | unsignedInteger | Default `0` |
+| `timestamps` | | created_at, updated_at |
+
+### `bookings` table
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | bigIncrements | PK |
+| `package_id` | foreignId, nullable | FK → `packages.id`, set null on delete |
+| `name` | string(255) | Customer name |
+| `phone` | string(30) | Phone number (without country code) |
+| `country_code` | string(5) | Country dial code with `+` prefix (e.g. `"+20"`, `"+7"`) — extracted from `intl-tel-input` |
+| `email` | string(255), nullable | Optional email |
+| `status` | enum | `'new'`, `'contacted'`, `'confirmed'`, `'completed'`, `'cancelled'` — default `'new'` |
+| `notes` | text, nullable | Admin internal notes |
+| `timestamps` | | created_at, updated_at |
+
+> [!NOTE]
+> `package_id` uses `nullOnDelete()` — if a package is deleted, the booking record stays but the package reference becomes null. This preserves order history.
+
+---
+
+## Currency Strategy — Locale-Aware Display
+
+### The Problem
+
+Admin creates packages with a specific currency (USD, EUR, or RUB). When a visitor browses in Italian, they should see Euro prices; in Russian, Ruble prices; in English, Dollar prices.
+
+### The Solution
+
+**Config-driven locale → currency mapping** in a new `config/currencies.php`:
+
+```php
+return [
+    // Which currency each locale prefers to see
+    'locale_map' => [
+        'en' => 'USD',
+        'ru' => 'RUB',
+        'it' => 'EUR',
+    ],
+
+    // Display metadata for each currency
+    'symbols' => [
+        'USD' => ['symbol' => '$',  'label' => 'US Dollar',     'position' => 'after'],  // "150 $"
+        'EUR' => ['symbol' => '€',  'label' => 'Euro',          'position' => 'after'],  // "150 €"
+        'RUB' => ['symbol' => '₽',  'label' => 'Russian Ruble', 'position' => 'after'],  // "150 ₽"
+    ],
+];
+```
+
+**Frontend display logic (in Package model accessor):**
+
+```php
+public function getFormattedPriceAttribute(): string
+{
+    $cfg = config("currencies.symbols.{$this->currency}");
+    $symbol = $cfg['symbol'] ?? $this->currency;
+    return number_format($this->price, 0) . ' ' . $symbol;  // "150 $", "250 €", "400 ₽"
+}
+```
+
+**Public home page query — filter by locale currency:**
+
+```php
+$localeCurrency = config('currencies.locale_map.' . app()->getLocale(), 'USD');
+$packages = Package::active()
+    ->where('currency', $localeCurrency)
+    ->ordered()
+    ->get();
+```
+
+**This means:** Admin creates 3 packages in USD (for English visitors), 3 in EUR (for Italian), and 3 in RUB (for Russian). Each locale sees only the packages priced in their currency.
+
+> [!TIP]
+> If admin only creates USD packages initially, English visitors see them. Russian/Italian visitors see an empty packages section (hidden gracefully with `@if ($packages->isNotEmpty())`). Admin can add EUR/RUB packages later when ready.
+
+**Admin view:** Currency shown as a badge on each package card. Admin selects currency from a `<select>` dropdown (Dollar / Euro / Russian Ruble) when creating/editing.
+
+---
+
+## intl-tel-input Integration
+
+### CDN Assets (loaded in public layout or booking section)
+
+```html
+<!-- CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/css/intlTelInput.css">
+
+<!-- JS (before Alpine) -->
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
+```
+
+### Alpine Integration in Booking Form
+
+```js
+x-data="{
+    form: { name: '', phone: '', country_code: '+20', email: '', package_id: '' },
+    iti: null,
+    loading: false,
+    errors: {},
+    success: false,
+    init() {
+        this.$nextTick(() => {
+            const input = this.$refs.phoneInput;
+            this.iti = window.intlTelInput(input, {
+                initialCountry: 'eg',
+                preferredCountries: ['eg', 'sa', 'ae', 'kw', 'qa', 'bh', 'om', 'jo', 'lb'],
+                separateDialCode: true,
+                utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/utils.js',
+            });
+            input.addEventListener('countrychange', () => {
+                const data = this.iti.getSelectedCountryData();
+                this.form.country_code = '+' + data.dialCode;
+            });
+        });
+    },
+    async submit() { /* fetch POST, handle 200/422/429 */ }
+}"
+```
+
+### Backend Storage
+
+- `country_code`: stored with `+` prefix (e.g. `"+20"`) — extracted from `intl-tel-input`
+- `phone`: the number part only (e.g. `"1234567890"`)
+- Admin sees full number: `+20 1234567890`
+
+---
+
+## Admin Routes
+
+Added to [admin.php](file:///f:/sharm4you/routes/admin.php) inside the existing `auth.admin` group:
+
+```
+# Packages
+GET    /admin/packages                     → PackageController@index
+POST   /admin/packages                     → PackageController@store
+PUT    /admin/packages/{package}           → PackageController@update
+DELETE /admin/packages/{package}           → PackageController@destroy
+PATCH  /admin/packages/{package}/toggle    → PackageController@toggleActive
+
+# Bookings
+GET    /admin/bookings                     → BookingController@index
+PATCH  /admin/bookings/{booking}/status    → BookingController@updateStatus
+PUT    /admin/bookings/{booking}/notes     → BookingController@updateNotes
+DELETE /admin/bookings/{booking}           → BookingController@destroy
+```
+
+## Public Routes
+
+Added to [web.php](file:///f:/sharm4you/routes/web.php) in both locale groups:
+
+```
+POST /book-session → BookSessionController@store
+```
+
+Rate-limited: 3 requests per minute per IP.
+
+---
+
+## Proposed Changes
+
+### Config
+
+#### [NEW] [config/currencies.php](file:///f:/sharm4you/config/currencies.php)
+
+Locale-to-currency mapping and currency display symbols (as described in Currency Strategy above).
+
+---
+
+### Database
+
+#### [NEW] Migration: `create_packages_table`
+
+Columns as per schema above. Index on `is_active`, `sort_order`, `currency`.
+
+#### [NEW] Migration: `create_bookings_table`
+
+Columns as per schema above. Foreign key `package_id` → `packages.id` with null on delete. Index on `status`, `created_at`.
+
+---
+
+### Models
+
+#### [NEW] [Package.php](file:///f:/sharm4you/app/Models/Package.php)
+
+- `$fillable`: `name_en`, `name_ru`, `name_it`, `description_en`, `description_ru`, `description_it`, `price`, `currency`, `hours`, `is_active`, `is_featured`, `sort_order`
+- `$casts`: `is_active` → `boolean`, `is_featured` → `boolean`, `price` → `decimal:2`, `hours` → `decimal:1`
+- Accessor: `name` — returns localized name based on `app()->getLocale()`
+- Accessor: `description` — returns localized description
+- Accessor: `formatted_price` — returns `"150 $"` / `"250 €"` / `"400 ₽"` using `config/currencies.php`
+- Accessor: `currency_label` — returns human-readable currency name
+- Scope: `scopeActive($query)`, `scopeOrdered($query)`
+- Scope: `scopeForLocale($query)` — filters by the current locale's preferred currency
+- Relationship: `bookings()` hasMany
+- Constants: `CURRENCIES = ['USD', 'EUR', 'RUB']`
+
+#### [NEW] [Booking.php](file:///f:/sharm4you/app/Models/Booking.php)
+
+- `$fillable`: `package_id`, `name`, `phone`, `country_code`, `email`, `status`, `notes`
+- `$casts`: `status` → `string`
+- Relationship: `package()` belongsTo Package
+- Accessor: `full_phone` — returns `"+20 1234567890"` format
+- Accessor: `status_label` — returns human-readable status
+- Accessor: `status_color` — returns Tailwind color class for badges
+- Scope: `scopeLatest($query)` — ordered by `created_at desc`
+- Constants: `STATUS_NEW`, `STATUS_CONTACTED`, `STATUS_CONFIRMED`, `STATUS_COMPLETED`, `STATUS_CANCELLED`
+- Static: `STATUSES` array for iteration
+
+---
+
+### Form Requests
+
+#### [NEW] `StorePackageRequest`
+
+```php
+'name_en'        => ['required', 'string', 'max:255'],
+'name_ru'        => ['required', 'string', 'max:255'],
+'name_it'        => ['required', 'string', 'max:255'],
+'description_en' => ['required', 'string', 'max:1000'],
+'description_ru' => ['required', 'string', 'max:1000'],
+'description_it' => ['required', 'string', 'max:1000'],
+'price'          => ['required', 'numeric', 'min:0', 'max:99999'],
+'currency'       => ['required', 'in:USD,EUR,RUB'],
+'hours'          => ['required', 'numeric', 'min:0.5', 'max:24'],
+'is_featured'    => ['boolean'],
+```
+
+#### [NEW] `UpdatePackageRequest`
+
+Same as store.
+
+#### [NEW] `StoreBookingRequest`
+
+```php
+'name'         => ['required', 'string', 'max:255'],
+'phone'        => ['required', 'string', 'max:20', 'regex:/^[0-9\s\-]+$/'],
+'country_code' => ['required', 'string', 'max:5', 'regex:/^\+\d{1,4}$/'],
+'email'        => ['nullable', 'email', 'max:255'],
+'package_id'   => ['required', 'exists:packages,id'],
+```
+
+---
+
+### Controllers
+
+#### [NEW] `Admin\PackageController`
+
+| Method | Logic |
+|--------|-------|
+| `index()` | Return `admin.packages.index` view with all packages (ordered), grouped by currency for clarity |
+| `store(StorePackageRequest)` | Create package, return JSON `{ success, package }` |
+| `update(UpdatePackageRequest, Package)` | Update package, return JSON |
+| `destroy(Package)` | Delete package (bookings keep null FK), return JSON |
+| `toggleActive(Package)` | Toggle `is_active`, return JSON `{ success, is_active }` |
+
+#### [NEW] `Admin\BookingController`
+
+| Method | Logic |
+|--------|-------|
+| `index()` | Return `admin.bookings.index` with all bookings (latest first), eager-load package. Optional `?status=` filter query param |
+| `updateStatus(Booking)` | Validate new status from `Booking::STATUSES`, update, return JSON |
+| `updateNotes(Booking)` | Update admin notes, return JSON |
+| `destroy(Booking)` | Delete booking, return JSON |
+
+#### [NEW] `BookSessionController` (public)
+
+| Method | Logic |
+|--------|-------|
+| `store(StoreBookingRequest)` | Prefix `+` to country_code if missing, create Booking with status `'new'`, return JSON `{ success, message }`. Rate-limited: 3/min per IP. |
+
+---
+
+### Admin Views
+
+#### [NEW] `admin/packages/index.blade.php` — Package List
+
+- Extends `admin.layouts.app`
+- Header: "Packages" title + "Add Package" button
+- Package list: each card shows name (EN primary), hours, price with currency symbol, active toggle, featured badge, edit/delete
+- Currency badge on each card (USD/EUR/RUB with color coding)
+- **Create Modal** (Alpine `x-show`):
+  - 3 name inputs (EN/RU/IT), 3 description textareas (EN/RU/IT)
+  - Price input + Currency `<select>` (Dollar / Euro / Russian Ruble)
+  - Hours input, Featured checkbox
+  - Submit via `fetch` POST → toast + prepend
+- **Edit Modal**: same fields, pre-filled, PUT request
+
+#### [NEW] `admin/bookings/index.blade.php` — Bookings List
+
+- Extends `admin.layouts.app`
+- Header: "Bookings" title + count badge (new bookings count)
+- Table layout with columns: #, Customer Name, Phone (full with code), Email, Package, Status, Date, Actions
+- Status dropdown: click to change status → AJAX PATCH → toast
+- Notes: expandable row or small modal for admin internal notes
+- Status filter tabs at top: All | New | Contacted | Confirmed | Completed | Cancelled
+- Color-coded status badges:
+  - `new` → blue
+  - `contacted` → amber
+  - `confirmed` → green
+  - `completed` → sharm-sea
+  - `cancelled` → red/muted
+- Empty state: "No bookings yet — they'll appear here when customers submit the booking form."
+
+---
+
+### Public Views
+
+#### [MODIFY] [home.blade.php](file:///f:/sharm4you/resources/views/home.blade.php) — Packages Section (lines 136–165)
+
+Replace the static `@foreach (__('site.packages.items'))` loop with `@foreach ($packages)` that reads from DB:
+
+```blade
+@if ($packages->isNotEmpty())
+<section id="packages" class="section-padding bg-white">
+    <!-- headings stay from translation files, unchanged -->
+    @foreach ($packages as $index => $package)
+        <article class="package-card reveal {{ $package->is_featured ? 'featured' : '' }}">
+            @if ($package->is_featured)
+                <span class="...">{{ __('site.packages.popular') }}</span>
+            @endif
+            <h3>{{ $package->name }}</h3>
+            <p>{{ $package->description }}</p>
+            <p>{{ $package->formatted_price }}</p>
+            <a href="#book-session" @click="navigate($event, '...')">{{ __('site.packages.book') }}</a>
+        </article>
+    @endforeach
+</section>
+@endif
+```
+
+Section headings (`label`, `title`, `subtitle`) stay from translation files — **unchanged**.
+
+#### [MODIFY] [home.blade.php](file:///f:/sharm4you/resources/views/home.blade.php) — New Book Session Section
+
+**Add a new section** between the FAQs section and the existing Contact section. The Contact section (email + phone links) remains **completely unchanged**.
+
+The Book Session section:
+
+```blade
+{{-- Book Session (NEW — between FAQs and Contact) --}}
+<section id="book-session" class="section-padding bg-white">
+    <div class="container-site reveal max-w-2xl" x-intersect.once="$el.classList.add('is-visible')">
+        <div class="text-center">
+            <p class="section-label">{{ __('site.booking.label') }}</p>
+            <h2 class="section-title mt-3">{{ __('site.booking.title') }}</h2>
+            <p class="mx-auto mt-4 max-w-lg text-sharm-mist">{{ __('site.booking.subtitle') }}</p>
+        </div>
+
+        <form x-data="bookingForm()" @submit.prevent="submit()" class="mt-10 space-y-5">
+            <!-- Name input -->
+            <!-- Phone: intl-tel-input widget (initialCountry: 'eg', preferredCountries: Arab nations) -->
+            <!-- Email input (optional) -->
+            <!-- Package select dropdown (from $packages) -->
+            <!-- Submit button with loading spinner -->
+            <!-- Success message after submit -->
+        </form>
+    </div>
+</section>
+
+{{-- Contact — UNCHANGED --}}
+<section id="contact" class="contact-section section-padding">
+    ...existing contact content stays exactly as-is...
+</section>
+```
+
+**intl-tel-input CDN assets** loaded via `@push('scripts')` in the booking section (CSS in head, JS before Alpine).
+
+**"Book This Package" buttons** in the packages section will scroll to `#book-session` and auto-select the clicked package in the dropdown (via URL hash or Alpine event).
+
+---
+
+### Route Changes
+
+#### [MODIFY] [web.php](file:///f:/sharm4you/routes/web.php)
+
+- Update home route closure to also query locale-filtered packages:
+  ```php
+  Route::get('/', function () {
+      $featuredPhotos = Photo::with('album')->featured()->ordered()->limit(12)->get();
+      $localeCurrency = config('currencies.locale_map.' . app()->getLocale(), 'USD');
+      $packages = Package::active()->where('currency', $localeCurrency)->ordered()->get();
+      return view('home', compact('featuredPhotos', 'packages'));
+  })->name('home');
+  ```
+- Add `POST /book-session` route with rate limiting in both locale groups:
+  ```php
+  Route::post('/book-session', [BookSessionController::class, 'store'])
+      ->middleware('throttle:3,1')
+      ->name('book-session');
+  ```
+
+#### [MODIFY] [admin.php](file:///f:/sharm4you/routes/admin.php)
+
+Add packages and bookings routes inside the `auth.admin` group.
+
+---
+
+### Admin Sidebar Update
+
+#### [MODIFY] [admin/layouts/app.blade.php](file:///f:/sharm4you/resources/views/admin/layouts/app.blade.php)
+
+- Change the **Packages** nav item from `disabled: true` to active with `route => 'admin.packages.index'`, `active => request()->routeIs('admin.packages.*')`
+- Add a new **Bookings** nav item (active, with an inbox/clipboard icon) between Packages and Testimonials:
+  ```php
+  ['label' => 'Bookings', 'route' => 'admin.bookings.index', 'active' => request()->routeIs('admin.bookings.*'), 'disabled' => false, 'icon' => '...']
+  ```
+- Bookings nav item shows a small count badge when there are `new` status bookings
+
+---
+
+### Dashboard Update
+
+#### [MODIFY] [admin/dashboard.blade.php](file:///f:/sharm4you/resources/views/admin/dashboard.blade.php)
+
+- Update "Active Packages" stat card to show real count from `Package::where('is_active', true)->count()` with note showing currency breakdown (e.g. "2 USD · 1 EUR")
+- Add "New Bookings" stat card showing `Booking::where('status', 'new')->count()` with accent color for urgency
+- Update quick actions: "Edit Package Pricing" → link to packages index (not disabled), add "View Bookings" action
+
+---
+
+### Translation File Updates
+
+#### [MODIFY] `lang/en/site.php` (and `ru`, `it`)
+
+- Remove `packages.items` array (moved to DB)
+- Keep `packages.label`, `packages.title`, `packages.subtitle`, `packages.book`
+- Add `packages.popular` key for the featured badge text
+- Add `packages.no_packages` for empty state
+- Add booking form strings:
+  ```php
+  'booking' => [
+      'label'         => 'Book Now',
+      'title'         => 'Book a Session',
+      'subtitle'      => 'Fill in your details and we\'ll get back to you shortly.',
+      'name'          => 'Your Name',
+      'name_placeholder' => 'Full name',
+      'phone'         => 'Phone Number',
+      'phone_placeholder' => 'Phone number',
+      'email'         => 'Email (optional)',
+      'email_placeholder' => 'your@email.com',
+      'package'       => 'Select Package',
+      'package_placeholder' => 'Choose a package...',
+      'submit'        => 'Send Booking Request',
+      'submitting'    => 'Sending...',
+      'success_title' => 'Booking Received!',
+      'success'       => 'Thank you! We\'ll contact you within 24 hours.',
+  ],
+  ```
+
+---
+
+### Public Layout — intl-tel-input CDN
+
+#### [MODIFY] [layouts/app.blade.php](file:///f:/sharm4you/resources/views/layouts/app.blade.php)
+
+Add `intl-tel-input` CSS in `<head>` and JS before Alpine scripts:
+
+```html
+<!-- intl-tel-input (phone country code picker) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/css/intlTelInput.css">
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
+```
+
+Only loaded on pages that need it (via `@stack('head')` or always in layout since it's lightweight and cached by CDN).
+
+---
+
+## Verification Plan
+
+### Automated
+
+```bash
+php artisan migrate                      # Run new migrations
+php artisan route:list --path=packages   # Verify package routes
+php artisan route:list --path=bookings   # Verify booking routes
+php artisan route:list --path=book       # Verify public booking route
+```
+
+### Manual Verification
+
+1. **Admin — Packages:** Create 3 USD packages (2h/4h/8h) → create 3 EUR packages → create 3 RUB packages → each shows currency badge → edit price → toggle active → delete → featured toggle
+2. **Admin — Bookings:** Submit a booking from public site → appears in bookings list as "New" → change status to "Contacted" → add admin note → change to "Confirmed" → filter by status
+3. **Public — Home EN:** Packages section shows only USD packages → featured has "Popular" badge
+4. **Public — Home RU (`/ru`):** Packages section shows only RUB packages with ₽ symbol
+5. **Public — Home IT (`/it`):** Packages section shows only EUR packages with € symbol
+6. **Public — Booking form:** Fill name → intl-tel-input shows Egypt flag by default → type phone number → select a package → submit → success toast → form resets → booking appears in admin with correct `+20` country code
+7. **Contact section:** Verify it's still there below the booking form, unchanged
+8. **Validation:** Submit empty form → field errors → invalid phone → error → no package → error
+9. **Rate limiting:** Submit 4 times rapidly → 4th gets rate-limited response
+10. **intl-tel-input:** Change country to Russia → dial code updates → submit → admin sees `+7` code
+
+---
+
+## Files Summary
+
+| Action | File |
+|--------|------|
+| Run | `php artisan migrate` |
+| NEW | `config/currencies.php` |
+| NEW | `database/migrations/..._create_packages_table.php` |
+| NEW | `database/migrations/..._create_bookings_table.php` |
+| NEW | `app/Models/Package.php` |
+| NEW | `app/Models/Booking.php` |
+| NEW | `app/Http/Controllers/Admin/PackageController.php` |
+| NEW | `app/Http/Controllers/Admin/BookingController.php` |
+| NEW | `app/Http/Controllers/BookSessionController.php` |
+| NEW | `app/Http/Requests/Admin/StorePackageRequest.php` |
+| NEW | `app/Http/Requests/Admin/UpdatePackageRequest.php` |
+| NEW | `app/Http/Requests/StoreBookingRequest.php` |
+| NEW | `resources/views/admin/packages/index.blade.php` |
+| NEW | `resources/views/admin/bookings/index.blade.php` |
+| MODIFY | `config/currencies.php` (new config file) |
+| MODIFY | `routes/admin.php` |
+| MODIFY | `routes/web.php` |
+| MODIFY | `resources/views/layouts/app.blade.php` (intl-tel-input CDN) |
+| MODIFY | `resources/views/admin/layouts/app.blade.php` (sidebar — Packages active, Bookings new) |
+| MODIFY | `resources/views/admin/dashboard.blade.php` (stats + actions) |
+| MODIFY | `resources/views/home.blade.php` (packages from DB + new booking form section) |
+| MODIFY | `lang/en/site.php` (remove static packages, add booking strings) |
+| MODIFY | `lang/ru/site.php` (same) |
+| MODIFY | `lang/it/site.php` (same) |
