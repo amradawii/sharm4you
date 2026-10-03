@@ -23,17 +23,23 @@ return [
             'hreflang' => 'it',
             'flag' => '🇮🇹',
         ],
-        'de' => [
-            'name' => 'German',
-            'native' => 'Deutsch',
-            'hreflang' => 'de',
-            'flag' => '🇩🇪',
+        'ro' => [
+            'name' => 'Romanian',
+            'native' => 'Română',
+            'hreflang' => 'ro',
+            'flag' => '🇷🇴',
         ],
-        'uk' => [
-            'name' => 'Ukrainian',
-            'native' => 'Українська',
-            'hreflang' => 'uk',
-            'flag' => '🇺🇦',
+        'bg' => [
+            'name' => 'Bulgarian',
+            'native' => 'Български',
+            'hreflang' => 'bg',
+            'flag' => '🇧🇬',
+        ],
+        'tr' => [
+            'name' => 'Turkish',
+            'native' => 'Türkçe',
+            'hreflang' => 'tr',
+            'flag' => '🇹🇷',
         ],
     ],
 

@@ -39,7 +39,15 @@
                     class="sr-only"
                 >
                 <span class="booking-package-option-name">{{ $package->name }}</span>
-                <span class="booking-package-option-price">{{ $package->formatted_price }}</span>
+                <span class="booking-package-option-price">
+                    @if ($package->is_discounted)
+                        <span class="block text-xs line-through opacity-70">{{ $package->formatted_price }}</span>
+                        <span class="block">{{ $package->formatted_discounted_price }}</span>
+                        <span class="mt-1 inline-block rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">-{{ $package->discount_percent }}%</span>
+                    @else
+                        {{ $package->formatted_price }}
+                    @endif
+                </span>
             </label>
         @endforeach
     </div>

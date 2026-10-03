@@ -39,11 +39,21 @@
                         @if ($package->is_featured)
                             <span class="package-card-badge">{{ __('site.packages.popular') }}</span>
                         @endif
+                        @if ($package->is_discounted)
+                            <span class="package-card-discount-badge">-{{ $package->discount_percent }}%</span>
+                        @endif
                     </div>
                     <div class="package-card-body">
                         <h3 class="font-display text-2xl text-sharm-deep">{{ $package->name }}</h3>
                         <p class="mt-4 flex-1 text-sm leading-relaxed text-sharm-mist">{{ $package->description }}</p>
-                        <p class="mt-6 font-display text-4xl tracking-tight text-sharm-desert">{{ $package->formatted_price }}</p>
+                        <div class="mt-6">
+                            @if ($package->is_discounted)
+                                <p class="text-sm text-sharm-mist line-through">{{ $package->formatted_price }}</p>
+                                <p class="font-display text-4xl tracking-tight text-sharm-desert">{{ $package->formatted_discounted_price }}</p>
+                            @else
+                                <p class="font-display text-4xl tracking-tight text-sharm-desert">{{ $package->formatted_price }}</p>
+                            @endif
+                        </div>
                         <button
                             type="button"
                             @click="$dispatch('open-booking-modal', {{ $package->id }})"

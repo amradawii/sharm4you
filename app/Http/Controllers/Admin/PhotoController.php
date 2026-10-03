@@ -30,8 +30,9 @@ class PhotoController extends Controller
             'alt_en'        => $photo->alt_en,
             'alt_ru'        => $photo->alt_ru,
             'alt_it'        => $photo->alt_it,
-            'alt_de'        => $photo->alt_de,
-            'alt_uk'        => $photo->alt_uk,
+            'alt_ro'        => $photo->alt_ro,
+            'alt_bg'        => $photo->alt_bg,
+            'alt_tr'        => $photo->alt_tr,
             'is_featured'   => $photo->is_featured,
             'url'           => $photo->url,
         ])->values();
@@ -92,8 +93,9 @@ class PhotoController extends Controller
                 'alt_en'        => $photo->alt_en,
                 'alt_ru'        => $photo->alt_ru,
                 'alt_it'        => $photo->alt_it,
-                'alt_de'        => $photo->alt_de,
-                'alt_uk'        => $photo->alt_uk,
+                'alt_ro'        => $photo->alt_ro,
+                'alt_bg'        => $photo->alt_bg,
+                'alt_tr'        => $photo->alt_tr,
                 'is_featured'   => $photo->is_featured,
                 'url'           => asset("storage/{$storagePath}"),
             ];
@@ -143,8 +145,9 @@ class PhotoController extends Controller
             'alt_en' => ['nullable', 'string', 'max:500'],
             'alt_ru' => ['nullable', 'string', 'max:500'],
             'alt_it' => ['nullable', 'string', 'max:500'],
-            'alt_de' => ['nullable', 'string', 'max:500'],
-            'alt_uk' => ['nullable', 'string', 'max:500'],
+            'alt_ro' => ['nullable', 'string', 'max:500'],
+            'alt_bg' => ['nullable', 'string', 'max:500'],
+            'alt_tr' => ['nullable', 'string', 'max:500'],
         ]);
 
         $photo->update($validated);

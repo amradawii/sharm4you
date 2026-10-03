@@ -188,12 +188,16 @@
                     <input type="text" x-model="altForm.alt_it" class="admin-input" placeholder="Descrizione in italiano">
                 </div>
                 <div>
-                    <label class="admin-label">Alt — Deutsch</label>
-                    <input type="text" x-model="altForm.alt_de" class="admin-input" placeholder="Beschreibung auf Deutsch">
+                    <label class="admin-label">Alt — Română</label>
+                    <input type="text" x-model="altForm.alt_ro" class="admin-input" placeholder="Descriere în română">
                 </div>
                 <div>
-                    <label class="admin-label">Alt — Українська</label>
-                    <input type="text" x-model="altForm.alt_uk" class="admin-input" placeholder="Опис українською">
+                    <label class="admin-label">Alt — Български</label>
+                    <input type="text" x-model="altForm.alt_bg" class="admin-input" placeholder="Описание на български">
+                </div>
+                <div>
+                    <label class="admin-label">Alt — Türkçe</label>
+                    <input type="text" x-model="altForm.alt_tr" class="admin-input" placeholder="Türkçe açıklama">
                 </div>
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button type="button" class="rounded-lg px-4 py-2.5 text-sm font-medium text-sharm-mist transition hover:bg-sharm-sand" @click="altModalOpen = false">Cancel</button>
@@ -258,7 +262,7 @@ function photoManager() {
         submitting: false,
 
         altModalOpen: false,
-        altForm: { id: null, original_name: '', alt_en: '', alt_ru: '', alt_it: '', alt_de: '', alt_uk: '' },
+        altForm: { id: null, original_name: '', alt_en: '', alt_ru: '', alt_it: '', alt_ro: '', alt_bg: '', alt_tr: '' },
         deletePhotoTarget: null,
 
         csrf: document.querySelector('meta[name="csrf-token"]').content,
@@ -385,8 +389,9 @@ function photoManager() {
                 alt_en: photo.alt_en || '',
                 alt_ru: photo.alt_ru || '',
                 alt_it: photo.alt_it || '',
-                alt_de: photo.alt_de || '',
-                alt_uk: photo.alt_uk || '',
+                alt_ro: photo.alt_ro || '',
+                alt_bg: photo.alt_bg || '',
+                alt_tr: photo.alt_tr || '',
             }
             this.altModalOpen = true
         },
@@ -406,8 +411,9 @@ function photoManager() {
                         alt_en: this.altForm.alt_en,
                         alt_ru: this.altForm.alt_ru,
                         alt_it: this.altForm.alt_it,
-                        alt_de: this.altForm.alt_de,
-                        alt_uk: this.altForm.alt_uk,
+                        alt_ro: this.altForm.alt_ro,
+                        alt_bg: this.altForm.alt_bg,
+                        alt_tr: this.altForm.alt_tr,
                     }),
                 })
 
@@ -420,8 +426,9 @@ function photoManager() {
                         p.alt_en = this.altForm.alt_en
                         p.alt_ru = this.altForm.alt_ru
                         p.alt_it = this.altForm.alt_it
-                        p.alt_de = this.altForm.alt_de
-                        p.alt_uk = this.altForm.alt_uk
+                        p.alt_ro = this.altForm.alt_ro
+                        p.alt_bg = this.altForm.alt_bg
+                        p.alt_tr = this.altForm.alt_tr
                     }
                     window.showToast('success', data.message)
                     this.altModalOpen = false

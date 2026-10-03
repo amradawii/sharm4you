@@ -15,8 +15,9 @@ return [
         'en' => 'USD',
         'ru' => 'RUB',
         'it' => 'EUR',
-        'de' => 'EUR',
-        'uk' => 'USD',
+        'ro' => 'EUR',
+        'bg' => 'EUR',
+        'tr' => 'USD',
     ],
 
     /*
@@ -26,8 +27,8 @@ return [
     */
 
     'symbols' => [
-        'USD' => ['symbol' => '$',  'label' => 'US Dollar',     'position' => 'after', 'locale' => 'en', 'locale_label' => 'English / Ukrainian site'],
-        'EUR' => ['symbol' => '€',  'label' => 'Euro',          'position' => 'after', 'locale' => 'it', 'locale_label' => 'Italian / German site'],
+        'USD' => ['symbol' => '$',  'label' => 'US Dollar',     'position' => 'after', 'locale' => 'en', 'locale_label' => 'English / Turkish site'],
+        'EUR' => ['symbol' => '€',  'label' => 'Euro',          'position' => 'after', 'locale' => 'it', 'locale_label' => 'Italian / Romanian / Bulgarian site'],
         'RUB' => ['symbol' => '₽',  'label' => 'Russian Ruble', 'position' => 'after', 'locale' => 'ru', 'locale_label' => 'Russian site'],
     ],
 

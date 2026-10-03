@@ -1,0 +1,267 @@
+<?php
+
+return [
+
+    'brand' => 'Sharm4You',
+
+    'topbar' => [
+        'location' => 'Sharm El Sheikh, Sinai — Egipt',
+        'language' => 'Limbă',
+    ],
+
+    'nav' => [
+        'home' => 'Acasă',
+        'services' => 'Servicii',
+        'gallery' => 'Galerie',
+        'about' => 'Despre noi',
+        'faqs' => 'Întrebări frecvente',
+        'contact' => 'Contact',
+        'book' => 'Rezervă o ședință',
+        'toggle_menu' => 'Deschide meniul',
+        'back_home' => 'Înapoi acasă',
+    ],
+
+    'hero' => [
+        'label' => 'Fotografie în Sinai și Marea Roșie',
+        'title' => 'Surprindem momentele acolo unde deșertul întâlnește marea',
+        'title_line1' => 'Surprindem momentele acolo unde deșertul',
+        'title_line2' => 'întâlnește marea',
+        'subtitle' => 'Fotografie profesionistă în Sharm El Sheikh, Dahab și peninsula Sinai — de la portrete intime până la panorame aeriene spectaculoase.',
+        'cta_gallery' => 'Vezi galeria',
+        'cta_book' => 'Rezervă o ședință',
+        'image_alt' => 'Munții Sinai la ora de aur, cu lumină caldă pe crestele stâncoase',
+    ],
+
+    'gallery' => [
+        'label' => 'Portofoliu',
+        'title' => 'Galerie recomandată',
+        'subtitle' => 'O selecție atent alcătuită din ședințele noastre de pe litoralul Mării Roșii, din potecile deșertului și din lumina orei de aur a Sinaiului de Sud.',
+        'cta_full' => 'Vezi galeria completă',
+        'page_title' => 'Galerie completă',
+        'page_subtitle' => 'Răsfoiește colecția noastră completă de fotografie marină, de deșert și de lifestyle din Sharm El Sheikh și din jur.',
+        'photos_count' => 'fotografii',
+        'no_albums' => 'Galeria vine în curând — revino pentru cele mai noi lucrări.',
+        'no_photos' => 'Încă nu există fotografii în acest album.',
+        'back_to_gallery' => 'Înapoi la galerie',
+    ],
+
+    'packages' => [
+        'label' => 'Ședințe',
+        'title' => 'Pachetele noastre',
+        'subtitle' => 'Alege ședința foto perfectă selectând numărul de ore dorit.',
+        'location' => 'Întâlnire pe loc, Sharm El Sheikh',
+        'book' => 'Rezervă acest pachet',
+        'popular' => 'Popular',
+        'no_packages' => 'Pachetele vin în curând — contactează-ne pentru un preț personalizat.',
+    ],
+
+    'photographers' => [
+        'label' => 'Echipa noastră',
+        'title' => 'Fotografi în Sinaiul de Sud',
+        'intro' => 'O echipă locală de fotografi de vacanță în Sharm El Sheikh — cunoaștem litoralul Mării Roșii și deșertul Sinai, de la lumină până la momentele care fac călătoria ta de neuitat.',
+        'points' => [
+            'Ani de experiență în fotografiere în Sharm, Dahab și locații din deșert.',
+            'Ghidare relaxată, care te ajută să te simți confortabil și să arăți natural.',
+            'Echipament profesional și galerii editate în 48–72 de ore.',
+        ],
+        'cta' => 'Descoperă serviciile noastre',
+        'image_alt' => 'Echipa de fotografi Sharm4You',
+    ],
+
+    'about' => [
+        'title' => 'Despre Sharm4You',
+        'intro' => 'Suntem fotografi de vacanță cu rădăcini în Sinaiul de Sud — surprindem magia locului unde deșertul întâlnește Marea Roșie.',
+        'story_label' => 'Povestea noastră',
+        'story_title' => 'Născuți în Sinai, construiți pentru călători',
+        'story_paragraphs' => [
+            'Sharm4You a început cu o idee simplă: vizitatorii Egiptului merită mai mult decât instantanee făcute în grabă. Merită fotografii gândite și editate frumos, care reflectă căldura Mării Roșii, dramatismul deșertului și bucuria de a fi în vacanță.',
+            'Cu baza în Sharm El Sheikh, lucrăm în Naama Bay, Ras Um Sid, Dahab și în locații selectate din deșert. Explorăm zilnic noi locuri, urmărim lumina orei de aur și ne adaptăm familiilor, cuplurilor, călătorilor singuri și creatorilor de conținut.',
+            'Fie că vrei un portret relaxat pe plajă, o ședință de aventură în deșert sau filmări aeriene peste litoral, echipa noastră aduce echipament profesional, cunoaștere locală și o abordare calmă și prietenoasă la fiecare ședință.',
+        ],
+        'why_subtitle' => 'Ce ne diferențiază atunci când rezervi o ședință cu echipa noastră.',
+        'values_label' => 'În ce credem',
+        'values_title' => 'Fotografie cu sens',
+        'values' => [
+            [
+                'title' => 'Momente autentice, nu poze rigide',
+                'desc' => 'Te ghidăm cu blândețe și lăsăm râsul, mișcarea și conexiunea reală să se vadă — astfel galeria ta seamănă cu vacanța ta, nu cu o ședință de studio.',
+            ],
+            [
+                'title' => 'Respect pentru loc și pentru oameni',
+                'desc' => 'Tratăm fiecare locație și fiecare client cu grijă — de la dimineți liniștite pe plajă până la zone aglomerate de resort — mereu atenți la intimitate, cultură și mediu.',
+            ],
+            [
+                'title' => 'Calitate pe care o poți păstra și împărtăși',
+                'desc' => 'Imagini editate la rezoluție înaltă, culoare consecventă și retuș curat — gata pentru print, albume, rețele sociale sau amintiri la care te vei întoarce ani de zile.',
+            ],
+            [
+                'title' => 'Comunicare clară, de la rezervare până la livrare',
+                'desc' => 'Rezervare simplă, răspunsuri rapide și o predare lină atunci când galeria ta e gata. Fără confuzii, fără așteptări lungi.',
+            ],
+        ],
+        'image_alt' => 'Fotograf profesionist ținând un aparat foto într-un cadru natural',
+        'cta_label' => 'Lucrează cu noi',
+        'cta_title' => 'Ești gata să îți planifici ședința?',
+        'cta_subtitle' => 'Răsfoiește pachetele, alege numărul de ore și trimite o cerere de rezervare — îți confirmăm disponibilitatea și detaliile locației direct.',
+        'cta_services' => 'Vezi serviciile și pachetele',
+    ],
+
+    'booking' => [
+        'label' => 'Rezervă acum',
+        'title' => 'Rezervă o ședință',
+        'subtitle' => 'Completează datele tale și te contactăm în scurt timp.',
+        'name' => 'Numele tău',
+        'name_placeholder' => 'Nume complet',
+        'phone' => 'Număr de telefon',
+        'phone_placeholder' => 'Număr de telefon',
+        'email' => 'Email (opțional)',
+        'email_placeholder' => 'tu@email.com',
+        'package' => 'Alege pachetul',
+        'package_placeholder' => 'Alege un pachet...',
+        'date' => 'Alege data',
+        'date_placeholder' => 'Selectează o dată',
+        'time' => 'Alege o oră disponibilă',
+        'no_slots_title' => 'Nicio oră disponibilă',
+        'no_slots' => 'Nu există intervale disponibile pentru această dată. Te rugăm să alegi altă dată.',
+        'submit' => 'Trimite cererea de rezervare',
+        'submitting' => 'Se trimite...',
+        'success_title' => 'Rezervare primită!',
+        'success' => 'Mulțumim! Te contactăm în câteva ore.',
+        'validation' => [
+            'name_required' => 'Te rugăm să îți introduci numele.',
+            'name_min' => 'Numele trebuie să aibă cel puțin 2 caractere.',
+            'phone_required' => 'Te rugăm să introduci numărul de telefon.',
+            'phone_invalid' => 'Te rugăm să introduci un număr de telefon valid.',
+            'email_invalid' => 'Te rugăm să introduci o adresă de email validă.',
+            'package_required' => 'Te rugăm să alegi un pachet.',
+            'date_required' => 'Te rugăm să alegi o dată.',
+            'time_required' => 'Te rugăm să alegi o oră disponibilă.',
+        ],
+    ],
+
+    'why_us' => [
+        'label' => 'De ce Sharm4You',
+        'title' => 'De ce noi',
+        'items' => [
+            [
+                'title' => 'Experți locali',
+                'desc' => 'Trăim și fotografiem în Sinai zi de zi — cunoaștem cea mai bună lumină, locurile ascunse și momentul potrivit în Naama Bay, Dahab și canioanele deșertului.',
+                'icon' => 'location',
+            ],
+            [
+                'title' => 'Livrare rapidă',
+                'desc' => 'Galeria ta editată ajunge în 48–72 de ore. Fără așteptări lungi — retrăiește amintirile vacanței cât mai ești încă în Egipt.',
+                'icon' => 'clock',
+            ],
+            [
+                'title' => 'Echipament de top',
+                'desc' => 'Aparate profesionale full-frame, obiective premium și dronă — detalii clare în fiecare cadru marin, de deșert sau de portret.',
+                'icon' => 'camera',
+            ],
+        ],
+    ],
+
+    'testimonials' => [
+        'label' => 'Recenzii',
+        'title' => 'Testimoniale',
+        'subtitle' => 'Ce spun clienții noștri despre experiența foto din Sharm El Sheikh.',
+        'empty' => 'Încă nu există recenzii — fii primul care își împărtășește experiența.',
+        'leave_review' => 'Lasă o recenzie',
+        'leave_review_title' => 'Împărtășește-ne experiența ta',
+        'leave_review_subtitle' => 'Povestește altor călători despre ședința ta foto din Sharm El Sheikh. Verificăm fiecare mesaj înainte de publicare.',
+        'name' => 'Numele tău',
+        'name_placeholder' => 'Nume complet',
+        'country' => 'Țară',
+        'country_placeholder' => 'Alege țara ta',
+        'comment' => 'Recenzia ta',
+        'comment_placeholder' => 'Spune-ne ce ți-a plăcut cel mai mult la ședință...',
+        'submit' => 'Trimite recenzia',
+        'submitting' => 'Se trimite...',
+        'success_title' => 'Mulțumim!',
+        'success' => 'Recenzia ta a fost trimisă și va apărea după aprobarea echipei noastre.',
+        'validation' => [
+            'name_required' => 'Te rugăm să îți introduci numele.',
+            'country_required' => 'Te rugăm să alegi țara.',
+            'comment_required' => 'Te rugăm să scrii recenzia.',
+            'comment_min' => 'Te rugăm să scrii puțin mai mult (cel puțin 10 caractere).',
+        ],
+    ],
+
+    'faqs' => [
+        'label' => 'Întrebări',
+        'title' => 'Întrebări frecvente',
+        'subtitle' => 'Tot ce trebuie să știi înainte de a rezerva ședința.',
+        'items' => [
+            [
+                'q' => 'Cu cât timp înainte ar trebui să rezerv?',
+                'a' => 'Recomandăm rezervarea cu cel puțin 3–5 zile înainte, mai ales în sezonul de vârf (octombrie–aprilie). Uneori există locuri de ultim moment — contactează-ne pentru a verifica.',
+            ],
+            [
+                'q' => 'În ce locații fotografiați?',
+                'a' => 'Fotografiem în Sharm El Sheikh, Dahab, Naama Bay, Ras Um Sid, Canionul Colorat și în locații selectate din deșert. Pentru locurile mai îndepărtate se poate aplica o taxă de deplasare.',
+            ],
+            [
+                'q' => 'Când primesc fotografiile?',
+                'a' => 'Imaginile editate la rezoluție înaltă sunt livrate în 48–72 de ore, prin intermediul unei galerii online private. Livrarea urgentă se poate aranja la cerere.',
+            ],
+            [
+                'q' => 'Pot alege pachete specifice sau adăuga cadre cu drona?',
+                'a' => 'Da. Pachetele de 2, 4 și 8 ore acoperă majoritatea nevoilor. Fotografia aeriană cu dronă poate fi adăugată la orice ședință — cere-o la rezervare.',
+            ],
+            [
+                'q' => 'Cu ce să mă îmbrac pentru o ședință pe plajă sau în deșert?',
+                'a' => 'Materialele ușoare și respirabile, în tonuri uniforme sau delicate, funcționează cel mai bine. Evită logourile mari. După confirmarea rezervării îți trimitem un scurt ghid de stil.',
+            ],
+            [
+                'q' => 'Se poate plăti în ziua ședinței?',
+                'a' => 'Un avans mic îți rezervă data. Restul sumei poate fi plătit cash sau cu cardul în ziua ședinței.',
+            ],
+        ],
+    ],
+
+    'contact' => [
+        'label' => 'Ia legătura',
+        'title' => 'Ești gata să îți surprindem momentul?',
+        'subtitle' => 'Spune-ne despre ședința ta — nunți, ședințe de călătorie, filmări cu drona sau un portret personal lângă Marea Roșie.',
+        'phone' => '+20 110 250 7590',
+        'phone_raw' => '+201102507590',
+        'whatsapp_label' => 'Scrie-ne pe WhatsApp',
+        'email' => 'hello@sharm4you.com',
+    ],
+
+    'footer' => [
+        'tagline' => 'Fotografie în Sharm El Sheikh, Dahab și peninsula Sinai — acolo unde deșertul întâlnește Marea Roșie.',
+        'explore' => 'Explorează',
+        'connect' => 'Conectează-te',
+        'location' => 'Sharm El Sheikh, Egipt',
+        'rights' => 'Toate drepturile rezervate.',
+        'made_in' => 'Făcut cu grijă în Sinai',
+    ],
+
+    'my_photos' => [
+        'label' => 'Livrare fotografii',
+        'title' => 'Fotografiile tale',
+        'subtitle' => 'Introdu numărul rezervării și codul de acces pentru a vedea și descărca fotografiile din ședința ta.',
+        'form_title' => 'Accesează fotografiile tale',
+        'form_subtitle' => 'Folosește numărul rezervării și codul pe care ți l-am trimis pe WhatsApp.',
+        'booking_label' => 'Număr rezervare',
+        'code_label' => 'Cod de acces',
+        'submit' => 'Vezi fotografiile mele',
+        'help' => 'Ți-ai pierdut codul? Scrie-ne pe WhatsApp și ți-l trimitem din nou.',
+        'not_found' => 'Nu am găsit fotografii pentru acest număr de rezervare și cod. Te rugăm să verifici și să încerci din nou.',
+        'error_number' => 'Te rugăm să introduci numărul rezervării.',
+        'error_code' => 'Te rugăm să introduci codul de acces.',
+        'ready_label' => 'Gata de descărcare',
+        'ready_title' => 'Bună :name, fotografiile tale sunt aici!',
+        'booking' => 'Rezervare',
+        'photo_count' => '{1} :count fotografie|[2,19] :count fotografii|[20,*] :count de fotografii',
+        'download' => 'Descarcă',
+        'download_hint' => 'Apasă pe orice fotografie pentru a o vedea pe tot ecranul sau descarcă-le pe toate într-o arhivă zip.',
+        'download_all' => 'Descarcă tot',
+        'download_preparing' => 'Se pregătește...',
+        'download_done' => 'Descărcat!',
+        'download_lightbox' => 'Descarcă această fotografie',
+        'thanks' => 'Mulțumim că ne-ai ales — sperăm să îți placă fotografiile!',
+    ],
+
+];

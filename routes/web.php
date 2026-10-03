@@ -9,8 +9,11 @@ use App\Http\Controllers\ReviewController;
 use App\Models\Album;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/en', '/', 301);
-Route::get('/en/{any}', fn (string $any) => redirect('/'.$any, 301))->where('any', '.*');
+// Retired prefixes: /en was never a real prefix, /de and /uk were removed locales.
+Route::redirect('/{retired}', '/', 301)->whereIn('retired', ['en', 'de', 'uk']);
+Route::get('/{retired}/{any}', fn (string $retired, string $any) => redirect('/'.$any, 301))
+    ->whereIn('retired', ['en', 'de', 'uk'])
+    ->where('any', '.*');
 
 Route::middleware('locale')->group(function () {
     Route::get('/', [HomeController::class, 'home'])->name('home');

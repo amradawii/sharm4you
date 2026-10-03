@@ -86,8 +86,9 @@ if (! function_exists('og_locale')) {
         return match (app()->getLocale()) {
             'ru' => 'ru_RU',
             'it' => 'it_IT',
-            'de' => 'de_DE',
-            'uk' => 'uk_UA',
+            'ro' => 'ro_RO',
+            'bg' => 'bg_BG',
+            'tr' => 'tr_TR',
             default => 'en_US',
         };
     }

@@ -2,7 +2,7 @@
 
 @section('title', 'Packages')
 @section('page_title', 'Packages')
-@section('breadcrumb', 'Session tiers · EN / IT / RU')
+@section('breadcrumb', 'Session tiers · EN / RU / IT / RO / BG / TR')
 
 @section('content')
 <div
@@ -36,6 +36,11 @@
                     <template x-if="!tier.image_url">
                         <div class="flex h-full w-full items-center justify-center text-xs text-sharm-mist">No photo</div>
                     </template>
+                    <span
+                        x-show="tier.is_discounted"
+                        class="absolute right-3 top-3 rounded-md bg-red-600 px-2.5 py-1 text-xs font-semibold text-white shadow"
+                        x-text="'-' + tier.discount_percent + '%'"
+                    ></span>
                 </div>
 
                 <div class="flex flex-1 flex-col p-5">
@@ -86,11 +91,19 @@
                     <p class="truncate"><span class="text-[10px] font-semibold uppercase tracking-wider text-sharm-mist">EN</span> <span class="text-sharm-deep" x-text="tier.name_en"></span></p>
                     <p class="truncate"><span class="text-[10px] font-semibold uppercase tracking-wider text-sharm-mist">RU</span> <span class="text-sharm-deep" x-text="tier.name_ru"></span></p>
                     <p class="truncate"><span class="text-[10px] font-semibold uppercase tracking-wider text-sharm-mist">IT</span> <span class="text-sharm-deep" x-text="tier.name_it"></span></p>
-                    <p class="truncate"><span class="text-[10px] font-semibold uppercase tracking-wider text-sharm-mist">DE</span> <span class="text-sharm-deep" x-text="tier.name_de"></span></p>
-                    <p class="truncate"><span class="text-[10px] font-semibold uppercase tracking-wider text-sharm-mist">UK</span> <span class="text-sharm-deep" x-text="tier.name_uk"></span></p>
+                    <p class="truncate"><span class="text-[10px] font-semibold uppercase tracking-wider text-sharm-mist">RO</span> <span class="text-sharm-deep" x-text="tier.name_ro"></span></p>
+                    <p class="truncate"><span class="text-[10px] font-semibold uppercase tracking-wider text-sharm-mist">BG</span> <span class="text-sharm-deep" x-text="tier.name_bg"></span></p>
+                    <p class="truncate"><span class="text-[10px] font-semibold uppercase tracking-wider text-sharm-mist">TR</span> <span class="text-sharm-deep" x-text="tier.name_tr"></span></p>
                 </div>
 
-                <div class="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-sm font-medium text-sharm-desert">
+                <div x-show="tier.is_discounted" class="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-sharm-mist line-through">
+                    <span x-text="tier.original_prices.USD"></span>
+                    <span class="text-sharm-mist/40">·</span>
+                    <span x-text="tier.original_prices.EUR"></span>
+                    <span class="text-sharm-mist/40">·</span>
+                    <span x-text="tier.original_prices.RUB"></span>
+                </div>
+                <div class="flex flex-wrap gap-x-3 gap-y-1 text-sm font-medium text-sharm-desert" :class="tier.is_discounted ? 'mt-1' : 'mt-4'">
                     <span x-text="tier.prices.USD"></span>
                     <span class="text-sharm-mist/40">·</span>
                     <span x-text="tier.prices.EUR"></span>
@@ -131,16 +144,16 @@
         <div class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-sharm-deep/10 bg-white p-6 shadow-xl">
             <div class="shrink-0">
                 <h2 class="text-lg font-semibold text-sharm-deep" x-text="editingTier ? 'Edit Package' : 'Add Package'"></h2>
-                <p class="mt-1 text-xs text-sharm-mist">Names and descriptions per language. One price per locale currency. Active and Popular apply to all locales together.</p>
+                <p class="mt-1 text-xs text-sharm-mist">Names and descriptions per language. Prices stay per currency; discount, Active, and Popular apply to all locales together.</p>
             </div>
 
             <form @submit.prevent="submitModal()" class="mt-5 flex min-h-0 flex-1 flex-col">
                 <div class="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
-                <div class="flex gap-1 rounded-lg bg-sharm-sand/60 p-1">
+                <div class="flex flex-wrap gap-1 rounded-lg bg-sharm-sand/60 p-1">
                     <template x-for="tab in langTabs" :key="tab.id">
                         <button
                             type="button"
-                            class="flex-1 rounded-md px-3 py-2 text-xs font-semibold transition"
+                            class="min-w-[5.5rem] flex-1 rounded-md px-2 py-2 text-xs font-semibold transition"
                             :class="langTab === tab.id ? 'bg-white text-sharm-deep shadow-sm' : 'text-sharm-mist hover:text-sharm-deep'"
                             @click="langTab = tab.id"
                             x-text="tab.label"
@@ -185,29 +198,42 @@
                     </div>
                 </div>
 
-                <div x-show="langTab === 'de'" class="space-y-3">
+                <div x-show="langTab === 'ro'" class="space-y-3">
                     <div>
-                        <label class="admin-label">Name — Deutsch <span class="text-red-400">*</span></label>
-                        <input type="text" x-model="form.name_de" class="admin-input" required>
-                        <p class="mt-1 text-xs text-red-500" x-show="errors.name_de" x-text="errors.name_de?.[0]"></p>
+                        <label class="admin-label">Name — Română <span class="text-red-400">*</span></label>
+                        <input type="text" x-model="form.name_ro" class="admin-input" required>
+                        <p class="mt-1 text-xs text-red-500" x-show="errors.name_ro" x-text="errors.name_ro?.[0]"></p>
                     </div>
                     <div>
-                        <label class="admin-label">Description — Deutsch <span class="text-red-400">*</span></label>
-                        <textarea x-model="form.description_de" class="admin-input min-h-[72px]" rows="2" required></textarea>
-                        <p class="mt-1 text-xs text-red-500" x-show="errors.description_de" x-text="errors.description_de?.[0]"></p>
+                        <label class="admin-label">Description — Română <span class="text-red-400">*</span></label>
+                        <textarea x-model="form.description_ro" class="admin-input min-h-[72px]" rows="2" required></textarea>
+                        <p class="mt-1 text-xs text-red-500" x-show="errors.description_ro" x-text="errors.description_ro?.[0]"></p>
                     </div>
                 </div>
 
-                <div x-show="langTab === 'uk'" class="space-y-3">
+                <div x-show="langTab === 'bg'" class="space-y-3">
                     <div>
-                        <label class="admin-label">Name — Українська <span class="text-red-400">*</span></label>
-                        <input type="text" x-model="form.name_uk" class="admin-input" required>
-                        <p class="mt-1 text-xs text-red-500" x-show="errors.name_uk" x-text="errors.name_uk?.[0]"></p>
+                        <label class="admin-label">Name — Български <span class="text-red-400">*</span></label>
+                        <input type="text" x-model="form.name_bg" class="admin-input" required>
+                        <p class="mt-1 text-xs text-red-500" x-show="errors.name_bg" x-text="errors.name_bg?.[0]"></p>
                     </div>
                     <div>
-                        <label class="admin-label">Description — Українська <span class="text-red-400">*</span></label>
-                        <textarea x-model="form.description_uk" class="admin-input min-h-[72px]" rows="2" required></textarea>
-                        <p class="mt-1 text-xs text-red-500" x-show="errors.description_uk" x-text="errors.description_uk?.[0]"></p>
+                        <label class="admin-label">Description — Български <span class="text-red-400">*</span></label>
+                        <textarea x-model="form.description_bg" class="admin-input min-h-[72px]" rows="2" required></textarea>
+                        <p class="mt-1 text-xs text-red-500" x-show="errors.description_bg" x-text="errors.description_bg?.[0]"></p>
+                    </div>
+                </div>
+
+                <div x-show="langTab === 'tr'" class="space-y-3">
+                    <div>
+                        <label class="admin-label">Name — Türkçe <span class="text-red-400">*</span></label>
+                        <input type="text" x-model="form.name_tr" class="admin-input" required>
+                        <p class="mt-1 text-xs text-red-500" x-show="errors.name_tr" x-text="errors.name_tr?.[0]"></p>
+                    </div>
+                    <div>
+                        <label class="admin-label">Description — Türkçe <span class="text-red-400">*</span></label>
+                        <textarea x-model="form.description_tr" class="admin-input min-h-[72px]" rows="2" required></textarea>
+                        <p class="mt-1 text-xs text-red-500" x-show="errors.description_tr" x-text="errors.description_tr?.[0]"></p>
                     </div>
                 </div>
 
@@ -244,26 +270,57 @@
                     <p class="mt-1 text-xs text-red-500" x-show="errors.image" x-text="errors.image?.[0]"></p>
                 </div>
 
-                <div class="grid gap-4 sm:grid-cols-4">
+                <div class="grid gap-4 sm:grid-cols-3">
                     <div>
                         <label class="admin-label">USD <span class="text-red-400">*</span></label>
                         <input type="number" x-model="form.price_usd" class="admin-input" min="0" step="1" required>
+                        <p
+                            x-show="showDiscountPreview(form.price_usd)"
+                            class="mt-2 rounded-lg bg-sharm-sea/10 px-3 py-2 text-xs text-sharm-deep"
+                        >
+                            Sale price: <strong x-text="discountedPricePreview(form.price_usd, '$')"></strong>
+                        </p>
                         <p class="mt-1 text-xs text-red-500" x-show="errors.price_usd" x-text="errors.price_usd?.[0]"></p>
                     </div>
                     <div>
                         <label class="admin-label">EUR <span class="text-red-400">*</span></label>
                         <input type="number" x-model="form.price_eur" class="admin-input" min="0" step="1" required>
+                        <p
+                            x-show="showDiscountPreview(form.price_eur)"
+                            class="mt-2 rounded-lg bg-sharm-sea/10 px-3 py-2 text-xs text-sharm-deep"
+                        >
+                            Sale price: <strong x-text="discountedPricePreview(form.price_eur, '€')"></strong>
+                        </p>
                         <p class="mt-1 text-xs text-red-500" x-show="errors.price_eur" x-text="errors.price_eur?.[0]"></p>
                     </div>
                     <div>
                         <label class="admin-label">RUB <span class="text-red-400">*</span></label>
                         <input type="number" x-model="form.price_rub" class="admin-input" min="0" step="1" required>
+                        <p
+                            x-show="showDiscountPreview(form.price_rub)"
+                            class="mt-2 rounded-lg bg-sharm-sea/10 px-3 py-2 text-xs text-sharm-deep"
+                        >
+                            Sale price: <strong x-text="discountedPricePreview(form.price_rub, '₽')"></strong>
+                        </p>
                         <p class="mt-1 text-xs text-red-500" x-show="errors.price_rub" x-text="errors.price_rub?.[0]"></p>
                     </div>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label class="admin-label">Hours <span class="text-red-400">*</span></label>
                         <input type="number" x-model="form.hours" class="admin-input" min="0.5" max="24" step="0.5" required>
                         <p class="mt-1 text-xs text-red-500" x-show="errors.hours" x-text="errors.hours?.[0]"></p>
+                    </div>
+                    <div>
+                        <label class="admin-label">Discount</label>
+                        <select x-model.number="form.discount_percent" class="admin-input" required>
+                            @foreach (\App\Models\Package::DISCOUNT_PERCENTAGES as $discount)
+                                <option value="{{ $discount }}">{{ $discount === 0 ? 'No discount' : $discount.'% off' }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-sharm-mist">Applied to USD, EUR, and RUB.</p>
+                        <p class="mt-1 text-xs text-red-500" x-show="errors.discount_percent" x-text="errors.discount_percent?.[0]"></p>
                     </div>
                 </div>
 
@@ -339,8 +396,9 @@ function packageManager() {
             { id: 'en', label: 'English' },
             { id: 'ru', label: 'Русский' },
             { id: 'it', label: 'Italiano' },
-            { id: 'de', label: 'Deutsch' },
-            { id: 'uk', label: 'Українська' },
+            { id: 'ro', label: 'Română' },
+            { id: 'bg', label: 'Български' },
+            { id: 'tr', label: 'Türkçe' },
         ],
         modalOpen: false,
         editingTier: null,
@@ -351,9 +409,10 @@ function packageManager() {
         imagePreview: null,
         removeImage: false,
         form: {
-            name_en: '', name_ru: '', name_it: '', name_de: '', name_uk: '',
-            description_en: '', description_ru: '', description_it: '', description_de: '', description_uk: '',
+            name_en: '', name_ru: '', name_it: '', name_ro: '', name_bg: '', name_tr: '',
+            description_en: '', description_ru: '', description_it: '', description_ro: '', description_bg: '', description_tr: '',
             price_usd: '', price_eur: '', price_rub: '',
+            discount_percent: 0,
             hours: '2',
             available_times: [],
         },
@@ -365,6 +424,23 @@ function packageManager() {
             return Number(hours) + 'h'
         },
 
+        showDiscountPreview(price) {
+            const amount = Number(price)
+            return Number(this.form.discount_percent) > 0
+                && String(price ?? '').trim() !== ''
+                && Number.isFinite(amount)
+                && amount >= 0
+        },
+
+        discountedPricePreview(price, symbol) {
+            const amount = Number(price)
+            const discount = Number(this.form.discount_percent)
+            if (!Number.isFinite(amount) || !Number.isFinite(discount)) return ''
+
+            const discounted = Math.round(amount * (100 - discount) / 100)
+            return discounted.toLocaleString('en-US') + ' ' + symbol
+        },
+
         formatSlot(slot) {
             const [h, m] = slot.split(':').map(Number)
             const period = h >= 12 ? 'PM' : 'AM'
@@ -374,9 +450,10 @@ function packageManager() {
 
         emptyForm() {
             return {
-                name_en: '', name_ru: '', name_it: '', name_de: '', name_uk: '',
-                description_en: '', description_ru: '', description_it: '', description_de: '', description_uk: '',
+                name_en: '', name_ru: '', name_it: '', name_ro: '', name_bg: '', name_tr: '',
+                description_en: '', description_ru: '', description_it: '', description_ro: '', description_bg: '', description_tr: '',
                 price_usd: '', price_eur: '', price_rub: '',
+                discount_percent: 0,
                 hours: '2',
                 available_times: [],
             }
@@ -397,16 +474,19 @@ function packageManager() {
                 name_en: tier.name_en,
                 name_ru: tier.name_ru,
                 name_it: tier.name_it,
-                name_de: tier.name_de,
-                name_uk: tier.name_uk,
+                name_ro: tier.name_ro,
+                name_bg: tier.name_bg,
+                name_tr: tier.name_tr,
                 description_en: tier.description_en,
                 description_ru: tier.description_ru,
                 description_it: tier.description_it,
-                description_de: tier.description_de,
-                description_uk: tier.description_uk,
+                description_ro: tier.description_ro,
+                description_bg: tier.description_bg,
+                description_tr: tier.description_tr,
                 price_usd: tier.price_usd,
                 price_eur: tier.price_eur,
                 price_rub: tier.price_rub,
+                discount_percent: tier.discount_percent,
                 hours: tier.hours,
                 available_times: [...(tier.available_times || [])],
             }

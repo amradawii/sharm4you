@@ -9,6 +9,7 @@ use App\Models\Package;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
@@ -42,9 +43,11 @@ class PackageController extends Controller
             ? $this->storePackageImage($request->file('image'))
             : null;
 
-        foreach (self::CURRENCY_PRICE_MAP as $currency => $priceKey) {
-            Package::create($this->tierAttributes($data, $currency, $data[$priceKey], $sortOrder, $image));
-        }
+        DB::transaction(function () use ($data, $sortOrder, $image) {
+            foreach (self::CURRENCY_PRICE_MAP as $currency => $priceKey) {
+                Package::create($this->tierAttributes($data, $currency, $data[$priceKey], $sortOrder, $image));
+            }
+        });
 
         $tier = $this->serializeTier(
             Package::where('hours', $data['hours'])->get()
@@ -69,15 +72,17 @@ class PackageController extends Controller
         $oldImage = $packages->first()->image;
         $image = $this->resolveTierImage($request, $oldImage);
 
-        foreach ($packages as $package) {
-            $priceKey = self::CURRENCY_PRICE_MAP[$package->currency] ?? null;
-            $package->update([
-                ...$this->sharedTierAttributes($data),
-                'hours' => $data['hours'],
-                'price' => $priceKey ? $data[$priceKey] : $package->price,
-                'image' => $image,
-            ]);
-        }
+        DB::transaction(function () use ($packages, $data, $image) {
+            foreach ($packages as $package) {
+                $priceKey = self::CURRENCY_PRICE_MAP[$package->currency] ?? null;
+                $package->update([
+                    ...$this->sharedTierAttributes($data),
+                    'hours' => $data['hours'],
+                    'price' => $priceKey ? $data[$priceKey] : $package->price,
+                    'image' => $image,
+                ]);
+            }
+        });
 
         $tier = $this->serializeTier(
             Package::where('hours', $data['hours'])->get()
@@ -167,7 +172,7 @@ class PackageController extends Controller
     private function storePackageImage(UploadedFile $file): string
     {
         $filename = Str::uuid()->toString().'.webp';
-        $manager = new ImageManager(new GdDriver());
+        $manager = new ImageManager(new GdDriver);
         $encoded = $manager->read($file->getRealPath())->toWebp(quality: 90);
 
         Storage::disk(self::IMAGE_DISK)->put(
@@ -207,13 +212,16 @@ class PackageController extends Controller
             'name_en' => $data['name_en'],
             'name_ru' => $data['name_ru'],
             'name_it' => $data['name_it'],
-            'name_de' => $data['name_de'],
-            'name_uk' => $data['name_uk'],
+            'name_ro' => $data['name_ro'],
+            'name_bg' => $data['name_bg'],
+            'name_tr' => $data['name_tr'],
             'description_en' => $data['description_en'],
             'description_ru' => $data['description_ru'],
             'description_it' => $data['description_it'],
-            'description_de' => $data['description_de'],
-            'description_uk' => $data['description_uk'],
+            'description_ro' => $data['description_ro'],
+            'description_bg' => $data['description_bg'],
+            'description_tr' => $data['description_tr'],
+            'discount_percent' => $data['discount_percent'],
             'available_times' => $data['available_times'],
         ];
     }
@@ -234,10 +242,14 @@ class PackageController extends Controller
         $symbols = config('currencies.symbols', []);
 
         $prices = [];
+        $originalPrices = [];
         foreach (Package::CURRENCIES as $currency) {
             $pkg = $packages->firstWhere('currency', $currency);
             $symbol = $symbols[$currency]['symbol'] ?? $currency;
             $prices[$currency] = $pkg
+                ? number_format($pkg->discounted_price, 0).' '.$symbol
+                : '—';
+            $originalPrices[$currency] = $pkg
                 ? number_format((float) $pkg->price, 0).' '.$symbol
                 : '—';
         }
@@ -247,18 +259,23 @@ class PackageController extends Controller
             'name_en' => $first->name_en,
             'name_ru' => $first->name_ru,
             'name_it' => $first->name_it,
-            'name_de' => $first->name_de,
-            'name_uk' => $first->name_uk,
+            'name_ro' => $first->name_ro,
+            'name_bg' => $first->name_bg,
+            'name_tr' => $first->name_tr,
             'description_en' => $first->description_en,
             'description_ru' => $first->description_ru,
             'description_it' => $first->description_it,
-            'description_de' => $first->description_de,
-            'description_uk' => $first->description_uk,
+            'description_ro' => $first->description_ro,
+            'description_bg' => $first->description_bg,
+            'description_tr' => $first->description_tr,
             'available_times' => $first->available_times ?? [],
             'price_usd' => (float) ($packages->firstWhere('currency', 'USD')?->price ?? 0),
             'price_eur' => (float) ($packages->firstWhere('currency', 'EUR')?->price ?? 0),
             'price_rub' => (float) ($packages->firstWhere('currency', 'RUB')?->price ?? 0),
+            'discount_percent' => (int) $first->discount_percent,
+            'is_discounted' => $first->is_discounted,
             'prices' => $prices,
+            'original_prices' => $originalPrices,
             'image_url' => $first->image_url,
             'is_active' => $packages->every(fn (Package $p) => $p->is_active),
             'is_featured' => $packages->every(fn (Package $p) => $p->is_featured),

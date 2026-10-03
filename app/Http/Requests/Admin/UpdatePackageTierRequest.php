@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Models\Package;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdatePackageTierRequest extends FormRequest
 {
@@ -18,16 +19,19 @@ class UpdatePackageTierRequest extends FormRequest
             'name_en' => ['required', 'string', 'max:255'],
             'name_ru' => ['required', 'string', 'max:255'],
             'name_it' => ['required', 'string', 'max:255'],
-            'name_de' => ['required', 'string', 'max:255'],
-            'name_uk' => ['required', 'string', 'max:255'],
+            'name_ro' => ['required', 'string', 'max:255'],
+            'name_bg' => ['required', 'string', 'max:255'],
+            'name_tr' => ['required', 'string', 'max:255'],
             'description_en' => ['required', 'string', 'max:1000'],
             'description_ru' => ['required', 'string', 'max:1000'],
             'description_it' => ['required', 'string', 'max:1000'],
-            'description_de' => ['required', 'string', 'max:1000'],
-            'description_uk' => ['required', 'string', 'max:1000'],
+            'description_ro' => ['required', 'string', 'max:1000'],
+            'description_bg' => ['required', 'string', 'max:1000'],
+            'description_tr' => ['required', 'string', 'max:1000'],
             'price_usd' => ['required', 'numeric', 'min:0', 'max:99999'],
             'price_eur' => ['required', 'numeric', 'min:0', 'max:99999'],
             'price_rub' => ['required', 'numeric', 'min:0', 'max:99999'],
+            'discount_percent' => ['required', 'integer', Rule::in(Package::DISCOUNT_PERCENTAGES)],
             'hours' => ['required', 'numeric', 'min:0.5', 'max:24'],
             'available_times' => ['required', 'array', 'min:1'],
             'available_times.*' => ['required', 'string', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],

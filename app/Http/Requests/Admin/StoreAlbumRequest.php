@@ -17,8 +17,9 @@ class StoreAlbumRequest extends FormRequest
             'name_en' => ['required', 'string', 'max:255'],
             'name_ru' => ['required', 'string', 'max:255'],
             'name_it' => ['required', 'string', 'max:255'],
-            'name_de' => ['required', 'string', 'max:255'],
-            'name_uk' => ['required', 'string', 'max:255'],
+            'name_ro' => ['required', 'string', 'max:255'],
+            'name_bg' => ['required', 'string', 'max:255'],
+            'name_tr' => ['required', 'string', 'max:255'],
         ];
     }
 

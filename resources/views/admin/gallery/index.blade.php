@@ -188,26 +188,37 @@
                     <p class="mt-1 text-xs text-red-500" x-show="errors.name_it" x-text="errors.name_it?.[0]"></p>
                 </div>
                 <div>
-                    <label class="admin-label">Name — Deutsch <span class="text-red-400">*</span></label>
+                    <label class="admin-label">Name — Română <span class="text-red-400">*</span></label>
                     <input
                         type="text"
-                        x-model="form.name_de"
+                        x-model="form.name_ro"
                         class="admin-input"
-                        placeholder="e.g. Moses Berg"
+                        placeholder="e.g. Muntele lui Moise"
                         required
                     >
-                    <p class="mt-1 text-xs text-red-500" x-show="errors.name_de" x-text="errors.name_de?.[0]"></p>
+                    <p class="mt-1 text-xs text-red-500" x-show="errors.name_ro" x-text="errors.name_ro?.[0]"></p>
                 </div>
                 <div>
-                    <label class="admin-label">Name — Українська <span class="text-red-400">*</span></label>
+                    <label class="admin-label">Name — Български <span class="text-red-400">*</span></label>
                     <input
                         type="text"
-                        x-model="form.name_uk"
+                        x-model="form.name_bg"
                         class="admin-input"
-                        placeholder="e.g. Гора Мойсея"
+                        placeholder="e.g. Планината на Мойсей"
                         required
                     >
-                    <p class="mt-1 text-xs text-red-500" x-show="errors.name_uk" x-text="errors.name_uk?.[0]"></p>
+                    <p class="mt-1 text-xs text-red-500" x-show="errors.name_bg" x-text="errors.name_bg?.[0]"></p>
+                </div>
+                <div>
+                    <label class="admin-label">Name — Türkçe <span class="text-red-400">*</span></label>
+                    <input
+                        type="text"
+                        x-model="form.name_tr"
+                        class="admin-input"
+                        placeholder="e.g. Musa Dağı"
+                        required
+                    >
+                    <p class="mt-1 text-xs text-red-500" x-show="errors.name_tr" x-text="errors.name_tr?.[0]"></p>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">
@@ -291,14 +302,14 @@ function albumManager() {
         editingAlbum: null,
         deleteTarget: null,
         submitting: false,
-        form: { name_en: '', name_ru: '', name_it: '', name_de: '', name_uk: '' },
+        form: { name_en: '', name_ru: '', name_it: '', name_ro: '', name_bg: '', name_tr: '' },
         errors: {},
 
         csrf: document.querySelector('meta[name="csrf-token"]').content,
 
         openCreateModal() {
             this.editingAlbum = null
-            this.form = { name_en: '', name_ru: '', name_it: '', name_de: '', name_uk: '' }
+            this.form = { name_en: '', name_ru: '', name_it: '', name_ro: '', name_bg: '', name_tr: '' }
             this.errors = {}
             this.modalOpen = true
         },
@@ -309,8 +320,9 @@ function albumManager() {
                 name_en: album.name_en,
                 name_ru: album.name_ru,
                 name_it: album.name_it,
-                name_de: album.name_de,
-                name_uk: album.name_uk,
+                name_ro: album.name_ro,
+                name_bg: album.name_bg,
+                name_tr: album.name_tr,
             }
             this.errors = {}
             this.modalOpen = true
@@ -360,8 +372,9 @@ function albumManager() {
                         this.albums[idx].name_en = data.album.name_en
                         this.albums[idx].name_ru = data.album.name_ru
                         this.albums[idx].name_it = data.album.name_it
-                        this.albums[idx].name_de = data.album.name_de
-                        this.albums[idx].name_uk = data.album.name_uk
+                        this.albums[idx].name_ro = data.album.name_ro
+                        this.albums[idx].name_bg = data.album.name_bg
+                        this.albums[idx].name_tr = data.album.name_tr
                         this.albums[idx].slug = data.album.slug
                     }
                 } else {

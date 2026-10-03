@@ -9,19 +9,24 @@ class Package extends Model
 {
     public const CURRENCIES = ['USD', 'EUR', 'RUB'];
 
+    public const DISCOUNT_PERCENTAGES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70];
+
     protected $fillable = [
         'name_en',
         'name_ru',
         'name_it',
-        'name_de',
-        'name_uk',
+        'name_ro',
+        'name_bg',
+        'name_tr',
         'description_en',
         'description_ru',
         'description_it',
-        'description_de',
-        'description_uk',
+        'description_ro',
+        'description_bg',
+        'description_tr',
         'image',
         'price',
+        'discount_percent',
         'currency',
         'hours',
         'available_times',
@@ -34,6 +39,7 @@ class Package extends Model
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'price' => 'decimal:2',
+        'discount_percent' => 'integer',
         'hours' => 'decimal:1',
         'available_times' => 'array',
         'sort_order' => 'integer',
@@ -66,10 +72,30 @@ class Package extends Model
 
     public function getFormattedPriceAttribute(): string
     {
-        $cfg = config("currencies.symbols.{$this->currency}");
-        $symbol = $cfg['symbol'] ?? $this->currency;
+        return $this->formatPrice((float) $this->price);
+    }
 
-        return number_format((float) $this->price, 0).' '.$symbol;
+    public function getIsDiscountedAttribute(): bool
+    {
+        return $this->discount_percent > 0;
+    }
+
+    public function getDiscountedPriceAttribute(): float
+    {
+        if (! $this->is_discounted) {
+            return round((float) $this->price, 0, PHP_ROUND_HALF_UP);
+        }
+
+        return round(
+            (float) $this->price * (100 - $this->discount_percent) / 100,
+            0,
+            PHP_ROUND_HALF_UP
+        );
+    }
+
+    public function getFormattedDiscountedPriceAttribute(): string
+    {
+        return $this->formatPrice($this->discounted_price);
     }
 
     public function getImageUrlAttribute(): ?string
@@ -109,5 +135,13 @@ class Package extends Model
         return $packages->mapWithKeys(fn (self $package) => [
             (string) $package->id => $package->available_times ?? [],
         ])->toArray();
+    }
+
+    private function formatPrice(float $price): string
+    {
+        $cfg = config("currencies.symbols.{$this->currency}");
+        $symbol = $cfg['symbol'] ?? $this->currency;
+
+        return number_format($price, 0).' '.$symbol;
     }
 }

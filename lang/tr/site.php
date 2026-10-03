@@ -1,0 +1,267 @@
+<?php
+
+return [
+
+    'brand' => 'Sharm4You',
+
+    'topbar' => [
+        'location' => 'Şarm El Şeyh, Sina — Mısır',
+        'language' => 'Dil',
+    ],
+
+    'nav' => [
+        'home' => 'Anasayfa',
+        'services' => 'Hizmetler',
+        'gallery' => 'Galeri',
+        'about' => 'Hakkımızda',
+        'faqs' => 'Sıkça Sorulan Sorular',
+        'contact' => 'İletişim',
+        'book' => 'Çekim Rezervasyonu',
+        'toggle_menu' => 'Menüyü aç',
+        'back_home' => 'Anasayfaya dön',
+    ],
+
+    'hero' => [
+        'label' => 'Sina ve Kızıldeniz Fotoğrafçılığı',
+        'title' => 'Çölün denizle buluştuğu yerde anları yakalıyoruz',
+        'title_line1' => 'Çölün denizle buluştuğu yerde',
+        'title_line2' => 'anları yakalıyoruz',
+        'subtitle' => 'Şarm El Şeyh, Dahab ve Sina Yarımadası genelinde profesyonel fotoğrafçılık — samimi portrelerden geniş havadan çekimlere kadar.',
+        'cta_gallery' => 'Galeriyi Gör',
+        'cta_book' => 'Çekim Rezervasyonu',
+        'image_alt' => 'Altın saatte Sina dağları, sarp zirvelerde sıcak ışık',
+    ],
+
+    'gallery' => [
+        'label' => 'Portfolyo',
+        'title' => 'Öne Çıkan Galeri',
+        'subtitle' => 'Kızıldeniz kıyısı, çöl patikaları ve Güney Sina\'nın altın saat ışığındaki çekimlerimizden özenle seçilmiş bir derleme.',
+        'cta_full' => 'Tüm Galeriyi Gör',
+        'page_title' => 'Tüm Galeri',
+        'page_subtitle' => 'Şarm El Şeyh ve çevresinden deniz, çöl ve yaşam tarzı fotoğrafçılığı koleksiyonumuzun tamamına göz atın.',
+        'photos_count' => 'fotoğraf',
+        'no_albums' => 'Galeri çok yakında — en yeni çalışmalarımız için tekrar uğrayın.',
+        'no_photos' => 'Bu albümde henüz fotoğraf yok.',
+        'back_to_gallery' => 'Galeriye dön',
+    ],
+
+    'packages' => [
+        'label' => 'Çekimler',
+        'title' => 'Paketlerimiz',
+        'subtitle' => 'Tercih ettiğiniz saat sayısını seçerek size en uygun fotoğraf çekimini belirleyin.',
+        'location' => 'Yerinde buluşma, Şarm El Şeyh',
+        'book' => 'Bu Paketi Rezerve Et',
+        'popular' => 'Popüler',
+        'no_packages' => 'Paketler çok yakında — özel çekim fiyatları için bize ulaşın.',
+    ],
+
+    'photographers' => [
+        'label' => 'Ekibimiz',
+        'title' => 'Güney Sina\'da Fotoğrafçılar',
+        'intro' => 'Şarm El Şeyh\'te yerel bir tatil fotoğrafçıları ekibi — Kızıldeniz kıyısını ve Sina çölünü, ışığından tatilinizi unutulmaz kılan anlarına kadar biliyoruz.',
+        'points' => [
+            'Şarm, Dahab ve çöl lokasyonlarında yıllara dayanan çekim deneyimi.',
+            'Rahat hissetmenizi ve doğal görünmenizi sağlayan sakin yönlendirme.',
+            'Profesyonel ekipman ve 48–72 saat içinde teslim edilen düzenlenmiş galeriler.',
+        ],
+        'cta' => 'Hizmetlerimizi Keşfedin',
+        'image_alt' => 'Sharm4You fotoğrafçılık ekibi',
+    ],
+
+    'about' => [
+        'title' => 'Sharm4You Hakkında',
+        'intro' => 'Kökleri Güney Sina\'da olan tatil fotoğrafçılarıyız — çöl manzaralarının Kızıldeniz ile buluştuğu yerdeki büyüyü yakalıyoruz.',
+        'story_label' => 'Hikâyemiz',
+        'story_title' => 'Sina\'da doğdu, gezginler için kuruldu',
+        'story_paragraphs' => [
+            'Sharm4You basit bir fikirle başladı: Mısır\'ı ziyaret edenler aceleyle çekilmiş karelerden daha fazlasını hak ediyor. Kızıldeniz\'in sıcaklığını, çölün etkileyiciliğini ve tatilde olmanın keyfini yansıtan, özenle düzenlenmiş güzel fotoğrafları hak ediyorlar.',
+            'Şarm El Şeyh merkezli olarak Naama Bay, Ras Um Sid, Dahab ve seçili çöl lokasyonlarında çalışıyoruz. Her gün yeni mekânlar keşfediyor, altın saat ışığını kovalıyor ve ailelere, çiftlere, tek başına seyahat edenlere ve içerik üreticilerine uyum sağlıyoruz.',
+            'Sahilde rahat bir portre, çölde maceralı bir çekim ya da kıyı boyunca havadan görüntüler isteyin — ekibimiz her çekime profesyonel ekipman, yerel bilgi ve sakin, samimi bir yaklaşım getiriyor.',
+        ],
+        'why_subtitle' => 'Ekibimizle bir çekim rezervasyonu yaptığınızda bizi farklı kılan şeyler.',
+        'values_label' => 'Neye İnanıyoruz',
+        'values_title' => 'Anlamlı fotoğrafçılık',
+        'values' => [
+            [
+                'title' => 'Katı pozlar yerine gerçek anlar',
+                'desc' => 'Sizi nazikçe yönlendirir, gerçek kahkahanın, hareketin ve bağın ortaya çıkmasına izin veririz — böylece galeriniz bir stüdyo çekimi değil, sizin tatiliniz gibi görünür.',
+            ],
+            [
+                'title' => 'Mekâna ve insana saygı',
+                'desc' => 'Sessiz sahil sabahlarından hareketli tatil bölgelerine kadar her lokasyona ve her müşteriye özenle davranırız — mahremiyete, kültüre ve çevreye her zaman dikkat ederiz.',
+            ],
+            [
+                'title' => 'Paylaşabileceğiniz ve saklayabileceğiniz kalite',
+                'desc' => 'Yüksek çözünürlüklü düzenlenmiş görseller, tutarlı renk ve temiz rötuş — baskı, albüm, sosyal medya ya da yıllarca döneceğiniz anılar için hazır.',
+            ],
+            [
+                'title' => 'Rezervasyondan teslimata net iletişim',
+                'desc' => 'Kolay rezervasyon, hızlı yanıtlar ve galeriniz hazır olduğunda sorunsuz bir teslim. Karışıklık yok, uzun bekleme yok.',
+            ],
+        ],
+        'image_alt' => 'Doğal bir ortamda kamera tutan profesyonel fotoğrafçı',
+        'cta_label' => 'Bizimle çalışın',
+        'cta_title' => 'Çekiminizi planlamaya hazır mısınız?',
+        'cta_subtitle' => 'Paketlerimize göz atın, saatinizi seçin ve rezervasyon talebi gönderin — uygunluğu ve lokasyon detaylarını doğrudan sizinle teyit ederiz.',
+        'cta_services' => 'Hizmetleri ve Paketleri Gör',
+    ],
+
+    'booking' => [
+        'label' => 'Hemen Rezerve Et',
+        'title' => 'Çekim Rezervasyonu',
+        'subtitle' => 'Bilgilerinizi doldurun, kısa süre içinde size dönüş yapalım.',
+        'name' => 'Adınız',
+        'name_placeholder' => 'Ad soyad',
+        'phone' => 'Telefon Numarası',
+        'phone_placeholder' => 'Telefon numarası',
+        'email' => 'E-posta (isteğe bağlı)',
+        'email_placeholder' => 'siz@email.com',
+        'package' => 'Paket Seçin',
+        'package_placeholder' => 'Bir paket seçin...',
+        'date' => 'Tarih Seçin',
+        'date_placeholder' => 'Bir tarih belirleyin',
+        'time' => 'Uygun saati seçin',
+        'no_slots_title' => 'Uygun saat yok',
+        'no_slots' => 'Bu tarih için uygun saat bulunmuyor. Lütfen başka bir tarih seçin.',
+        'submit' => 'Rezervasyon Talebi Gönder',
+        'submitting' => 'Gönderiliyor...',
+        'success_title' => 'Talebiniz Alındı!',
+        'success' => 'Teşekkürler! Birkaç saat içinde sizinle iletişime geçeceğiz.',
+        'validation' => [
+            'name_required' => 'Lütfen adınızı girin.',
+            'name_min' => 'Ad en az 2 karakter olmalıdır.',
+            'phone_required' => 'Lütfen telefon numaranızı girin.',
+            'phone_invalid' => 'Lütfen geçerli bir telefon numarası girin.',
+            'email_invalid' => 'Lütfen geçerli bir e-posta adresi girin.',
+            'package_required' => 'Lütfen bir paket seçin.',
+            'date_required' => 'Lütfen bir tarih seçin.',
+            'time_required' => 'Lütfen uygun bir saat seçin.',
+        ],
+    ],
+
+    'why_us' => [
+        'label' => 'Neden Sharm4You',
+        'title' => 'Neden Biz',
+        'items' => [
+            [
+                'title' => 'Yerel Uzmanlar',
+                'desc' => 'Her gün Sina\'da yaşıyor ve çekim yapıyoruz — Naama Bay, Dahab ve çöl kanyonlarındaki en iyi ışığı, gizli noktaları ve doğru zamanı biliyoruz.',
+                'icon' => 'location',
+            ],
+            [
+                'title' => 'Hızlı Teslimat',
+                'desc' => 'Düzenlenmiş galeriniz 48–72 saat içinde ulaşır. Uzun bekleyiş yok — henüz Mısır\'dayken tatil anılarınızı yeniden yaşayın.',
+                'icon' => 'clock',
+            ],
+            [
+                'title' => 'Üst Düzey Ekipman',
+                'desc' => 'Profesyonel full-frame kameralar, premium lensler ve drone imkânı — her deniz, çöl ve portre karesinde net detay.',
+                'icon' => 'camera',
+            ],
+        ],
+    ],
+
+    'testimonials' => [
+        'label' => 'Yorumlar',
+        'title' => 'Müşteri Yorumları',
+        'subtitle' => 'Müşterilerimiz Şarm El Şeyh fotoğraf deneyimleri hakkında ne diyor.',
+        'empty' => 'Henüz yorum yok — deneyimini paylaşan ilk kişi olun.',
+        'leave_review' => 'Yorum Bırak',
+        'leave_review_title' => 'Deneyiminizi paylaşın',
+        'leave_review_subtitle' => 'Diğer gezginlere Şarm El Şeyh fotoğraf çekiminizden bahsedin. Yayınlamadan önce her yorumu inceliyoruz.',
+        'name' => 'Adınız',
+        'name_placeholder' => 'Ad soyad',
+        'country' => 'Ülke',
+        'country_placeholder' => 'Ülkenizi seçin',
+        'comment' => 'Yorumunuz',
+        'comment_placeholder' => 'Çekiminizde en çok neyi sevdiğinizi paylaşın...',
+        'submit' => 'Yorumu Gönder',
+        'submitting' => 'Gönderiliyor...',
+        'success_title' => 'Teşekkürler!',
+        'success' => 'Yorumunuz gönderildi ve ekibimiz onayladıktan sonra görünecek.',
+        'validation' => [
+            'name_required' => 'Lütfen adınızı girin.',
+            'country_required' => 'Lütfen ülkenizi seçin.',
+            'comment_required' => 'Lütfen yorumunuzu yazın.',
+            'comment_min' => 'Lütfen biraz daha yazın (en az 10 karakter).',
+        ],
+    ],
+
+    'faqs' => [
+        'label' => 'Sorular',
+        'title' => 'Sıkça Sorulan Sorular',
+        'subtitle' => 'Çekiminizi rezerve etmeden önce bilmeniz gereken her şey.',
+        'items' => [
+            [
+                'q' => 'Ne kadar önceden rezervasyon yapmalıyım?',
+                'a' => 'Özellikle yoğun sezonda (Ekim–Nisan) en az 3–5 gün önceden rezervasyon yapmanızı öneririz. Son dakika yerler olabilir — kontrol etmek için bize yazın.',
+            ],
+            [
+                'q' => 'Hangi lokasyonlarda çekim yapıyorsunuz?',
+                'a' => 'Şarm El Şeyh, Dahab, Naama Bay, Ras Um Sid, Renkli Kanyon ve seçili çöl lokasyonlarında çekim yapıyoruz. Uzak noktalar için ulaşım ücreti uygulanabilir.',
+            ],
+            [
+                'q' => 'Fotoğraflarımı ne zaman alırım?',
+                'a' => 'Düzenlenmiş yüksek çözünürlüklü görseller, özel bir çevrimiçi galeri üzerinden 48–72 saat içinde teslim edilir. Talep üzerine hızlı teslimat ayarlanabilir.',
+            ],
+            [
+                'q' => 'Belirli paketleri seçebilir veya drone çekimi ekleyebilir miyim?',
+                'a' => 'Evet. 2, 4 ve 8 saatlik paketlerimiz çoğu ihtiyacı karşılar. Drone ve havadan fotoğrafçılık her çekime eklenebilir — rezervasyon sırasında belirtin.',
+            ],
+            [
+                'q' => 'Sahil veya çöl çekimi için ne giymeliyim?',
+                'a' => 'Düz veya yumuşak tonlarda hafif, nefes alan kumaşlar en iyi sonucu verir. Büyük logolardan kaçının. Rezervasyonunuzu onayladıktan sonra kısa bir stil rehberi gönderiyoruz.',
+            ],
+            [
+                'q' => 'Çekim günü ödeme imkânı var mı?',
+                'a' => 'Küçük bir ön ödeme tarihinizi garantiler. Kalan tutar çekim günü nakit veya kartla ödenebilir.',
+            ],
+        ],
+    ],
+
+    'contact' => [
+        'label' => 'İletişime geçin',
+        'title' => 'Anınızı yakalamaya hazır mısınız?',
+        'subtitle' => 'Çekiminizden bize bahsedin — düğünler, seyahat çekimleri, drone çalışmaları veya Kızıldeniz kıyısında kişisel bir portre.',
+        'phone' => '+20 110 250 7590',
+        'phone_raw' => '+201102507590',
+        'whatsapp_label' => 'WhatsApp\'tan bize yazın',
+        'email' => 'hello@sharm4you.com',
+    ],
+
+    'footer' => [
+        'tagline' => 'Şarm El Şeyh, Dahab ve Sina Yarımadası\'nda fotoğrafçılık — çölün Kızıldeniz ile buluştuğu yerde.',
+        'explore' => 'Keşfet',
+        'connect' => 'Bize Ulaşın',
+        'location' => 'Şarm El Şeyh, Mısır',
+        'rights' => 'Tüm hakları saklıdır.',
+        'made_in' => 'Sina\'da özenle hazırlandı',
+    ],
+
+    'my_photos' => [
+        'label' => 'Fotoğraf Teslimi',
+        'title' => 'Fotoğraflarınız',
+        'subtitle' => 'Çekim fotoğraflarınızı görüntülemek ve indirmek için rezervasyon numaranızı ve erişim kodunuzu girin.',
+        'form_title' => 'Fotoğraflarınıza erişin',
+        'form_subtitle' => 'WhatsApp üzerinden gönderdiğimiz rezervasyon numarasını ve kodu kullanın.',
+        'booking_label' => 'Rezervasyon numarası',
+        'code_label' => 'Erişim kodu',
+        'submit' => 'Fotoğraflarımı göster',
+        'help' => 'Kodunuzu mu kaybettiniz? WhatsApp\'tan bize yazın, yeniden gönderelim.',
+        'not_found' => 'Bu rezervasyon numarası ve kod için fotoğraf bulamadık. Lütfen kontrol edip tekrar deneyin.',
+        'error_number' => 'Lütfen rezervasyon numaranızı girin.',
+        'error_code' => 'Lütfen erişim kodunuzu girin.',
+        'ready_label' => 'İndirmeye hazır',
+        'ready_title' => 'Merhaba :name, fotoğraflarınız hazır!',
+        'booking' => 'Rezervasyon',
+        'photo_count' => '{1} :count fotoğraf|[2,*] :count fotoğraf',
+        'download' => 'İndir',
+        'download_hint' => 'Tam ekran görüntülemek için herhangi bir fotoğrafa tıklayın veya tümünü tek seferde zip olarak indirin.',
+        'download_all' => 'Tümünü İndir',
+        'download_preparing' => 'Hazırlanıyor...',
+        'download_done' => 'İndirildi!',
+        'download_lightbox' => 'Bu fotoğrafı indir',
+        'thanks' => 'Bizi seçtiğiniz için teşekkürler — fotoğraflarınızı seveceğinizi umuyoruz!',
+    ],
+
+];

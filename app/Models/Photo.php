@@ -14,8 +14,9 @@ class Photo extends Model
         'alt_en',
         'alt_ru',
         'alt_it',
-        'alt_de',
-        'alt_uk',
+        'alt_ro',
+        'alt_bg',
+        'alt_tr',
         'is_featured',
         'sort_order',
     ];
