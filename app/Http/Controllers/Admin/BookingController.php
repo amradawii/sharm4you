@@ -8,12 +8,17 @@ use App\Http\Requests\Admin\UpdateAdminBookingRequest;
 use App\Http\Requests\Admin\UploadBookingPhotoRequest;
 use App\Models\Booking;
 use App\Models\BookingPhoto;
+use App\Support\PhotoStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Exceptions\DecoderException;
 use Intervention\Image\ImageManager;
+use Throwable;
 
 class BookingController extends Controller
 {
@@ -24,7 +29,7 @@ class BookingController extends Controller
     private const QUALITY = 85;
 
     /** Free-tier ceiling for the storage meter (10 GB in bytes). */
-    private const FREE_TIER_BYTES = 10 * 1024 * 1024 * 1024;
+    private const FREE_TIER_BYTES = 10_000_000_000;
 
     public function index(Request $request)
     {
@@ -170,7 +175,11 @@ class BookingController extends Controller
         }
 
         $manager = new ImageManager(new GdDriver);
-        $image = $manager->read($file->getRealPath());
+        try {
+            $image = $manager->read($file->getRealPath());
+        } catch (DecoderException $e) {
+            throw ValidationException::withMessages(['photo' => 'This image cannot be decoded. Please re-save it and try again.']);
+        }
 
         // Scale the longest side down to MAX_DIMENSION (proportional, no crop,
         // no upscaling of already-smaller images).
@@ -190,18 +199,35 @@ class BookingController extends Controller
         };
 
         $binary = (string) $encoded;
-        $key = "bookings/{$booking->booking_number}/".Str::uuid()->toString().".{$extension}";
+        $uuid = Str::uuid()->toString();
+        $key = "bookings/{$booking->booking_number}/{$uuid}.{$extension}";
+        $filename = $booking->booking_number.'-'.now(config('booking.timezone'))->format('Ymd').'-'.$uuid.'.'.$extension;
 
-        Storage::disk('r2')->put($key, $binary);
+        $written = false;
+        try {
+            $photo = DB::transaction(function () use ($booking, $filename, $key, $binary, &$written) {
+                $booking = Booking::query()->lockForUpdate()->findOrFail($booking->id);
+                if ($booking->photos()->count() >= config('photo_delivery.max_per_booking')) {
+                    throw ValidationException::withMessages(['photo' => 'This booking already has the maximum of '.config('photo_delivery.max_per_booking').' photos.']);
+                }
 
-        $maxSort = (int) $booking->photos()->max('sort_order');
+                PhotoStorage::put('r2', $key, $binary);
+                $written = true;
+                $maxSort = (int) $booking->photos()->max('sort_order');
 
-        $photo = $booking->photos()->create([
-            'r2_key' => $key,
-            'original_name' => $file->getClientOriginalName(),
-            'size' => strlen($binary),
-            'sort_order' => $maxSort + 1,
-        ]);
+                return $booking->photos()->create([
+                    'r2_key' => $key,
+                    'filename' => $filename,
+                    'size' => strlen($binary),
+                    'sort_order' => $maxSort + 1,
+                ]);
+            });
+        } catch (Throwable $e) {
+            if ($written) {
+                PhotoStorage::cleanup('r2', $key);
+            }
+            throw $e;
+        }
 
         return response()->json([
             'success' => true,
@@ -256,10 +282,10 @@ class BookingController extends Controller
     {
         return [
             'id' => $photo->id,
-            'original_name' => $photo->original_name,
+            'filename' => $photo->filename,
             'size' => $photo->size,
             'size_label' => $photo->size_label,
-            'url' => $photo->download_url,
+            'url' => $photo->preview_url,
         ];
     }
 

@@ -4,6 +4,8 @@ namespace App\Http\Requests;
 
 use App\Models\Package;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 
 class StoreBookingRequest extends FormRequest
 {
@@ -12,19 +14,26 @@ class StoreBookingRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('phone'))) {
+            $this->merge(['phone' => preg_replace('/[\s\-]+/u', '', $this->input('phone'))]);
+        }
+    }
+
     public function rules(): array
     {
         // Existence + active + locale-currency + slot membership are all checked
         // in a single DB fetch inside withValidator()->after(), so rules() stays
         // structural only (no closure query that would duplicate the fetch).
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9\s\-]+$/'],
-            'country_code' => ['required', 'string', 'max:5', 'regex:/^\+\d{1,4}$/'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'name' => ['required', 'string', 'min:'.config('booking.validation.name_min'), 'max:'.config('booking.validation.name_max')],
+            'phone' => ['required', 'string', 'min:'.config('booking.validation.phone_min'), 'max:'.config('booking.validation.phone_max'), 'regex:/^[0-9]+$/'],
+            'country_code' => ['required', 'string', Rule::in(config('countries.public_dial_codes'))],
+            'email' => ['nullable', 'string', 'email', 'max:'.config('booking.validation.email_max')],
             'package_id' => ['required', 'integer'],
-            'session_date' => ['required', 'date', 'after_or_equal:today'],
-            'session_time' => ['required', 'string', 'max:5', 'regex:/^\d{2}:\d{2}$/'],
+            'session_date' => ['required', 'string', 'date_format:Y-m-d', 'after_or_equal:'.now(config('booking.timezone'))->format('Y-m-d')],
+            'session_time' => ['required', 'string', 'size:5', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
         ];
     }
 
@@ -34,6 +43,15 @@ class StoreBookingRequest extends FormRequest
             $packageId = $this->input('package_id');
             $sessionDate = $this->input('session_date');
             $sessionTime = $this->input('session_time');
+
+            if ($validator->errors()->has('package_id')) {
+                return;
+            }
+
+            if (! $validator->errors()->has('phone') && ! $validator->errors()->has('country_code')
+                && strlen(ltrim($this->input('country_code'), '+').$this->input('phone')) > 15) {
+                $validator->errors()->add('phone', __('site.booking.validation.phone_invalid'));
+            }
 
             if (! $packageId) {
                 // 'required' rule already covers this; nothing to add.
@@ -49,8 +67,12 @@ class StoreBookingRequest extends FormRequest
                 ->first();
 
             if (! $package) {
-                $validator->errors()->add('package_id', 'Please select a valid package.');
+                $validator->errors()->add('package_id', __('site.booking.validation.package_required'));
 
+                return;
+            }
+
+            if ($validator->errors()->has('session_time') || $validator->errors()->has('session_date')) {
                 return;
             }
 
@@ -61,18 +83,18 @@ class StoreBookingRequest extends FormRequest
             $availableTimes = $package->available_times ?? [];
 
             if (! in_array($sessionTime, $availableTimes, true)) {
-                $validator->errors()->add('session_time', 'Please select an available time for this package.');
+                $validator->errors()->add('session_time', __('site.booking.validation.time_required'));
 
                 return;
             }
 
-            if ($sessionDate === now()->format('Y-m-d')) {
-                $now = now();
+            $now = now(config('booking.timezone'));
+            if ($sessionDate === $now->format('Y-m-d')) {
                 [$hours, $minutes] = explode(':', $sessionTime);
-                $slotDateTime = $now->copy()->setTime((int) $hours, (int) $minutes, 0);
+                $slotDateTime = Carbon::createFromFormat('!Y-m-d', $sessionDate, config('booking.timezone'))->setTime((int) $hours, (int) $minutes, 0);
 
                 if ($slotDateTime <= $now) {
-                    $validator->errors()->add('session_time', 'Please select a time that has not already passed.');
+                    $validator->errors()->add('session_time', __('site.booking.validation.time_required'));
                 }
             }
         });
@@ -80,13 +102,19 @@ class StoreBookingRequest extends FormRequest
 
     public function messages(): array
     {
-        return [
-            'package_id.required' => 'Please select a package.',
-            'package_id.integer' => 'Please select a valid package.',
-            'phone.regex' => 'Please enter a valid phone number.',
-            'country_code.regex' => 'Please select a valid country code.',
-            'session_date.after_or_equal' => 'Please select today or a future date.',
-            'session_time.regex' => 'Please select a valid time slot.',
-        ];
+        $messages = [];
+        foreach ([
+            'name.required' => 'name_required', 'name.string' => 'name_required', 'name.min' => 'name_min', 'name.max' => 'name_max',
+            'phone.required' => 'phone_required', 'phone.string' => 'phone_invalid', 'phone.min' => 'phone_invalid', 'phone.max' => 'phone_invalid', 'phone.regex' => 'phone_invalid',
+            'country_code.required' => 'country_code_invalid', 'country_code.string' => 'country_code_invalid', 'country_code.in' => 'country_code_invalid',
+            'email.string' => 'email_invalid', 'email.email' => 'email_invalid', 'email.max' => 'email_max',
+            'package_id.required' => 'package_required', 'package_id.integer' => 'package_required',
+            'session_date.required' => 'date_required', 'session_date.string' => 'date_invalid', 'session_date.date_format' => 'date_invalid', 'session_date.after_or_equal' => 'date_invalid',
+            'session_time.required' => 'time_required', 'session_time.string' => 'time_required', 'session_time.size' => 'time_required', 'session_time.regex' => 'time_required',
+        ] as $rule => $key) {
+            $messages[$rule] = __('site.booking.validation.'.$key);
+        }
+
+        return $messages;
     }
 }

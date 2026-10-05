@@ -147,7 +147,7 @@
                 <p class="mt-1 text-xs text-sharm-mist">Names and descriptions per language. Prices stay per currency; discount, Active, and Popular apply to all locales together.</p>
             </div>
 
-            <form @submit.prevent="submitModal()" class="mt-5 flex min-h-0 flex-1 flex-col">
+            <form @submit.prevent="submitModal()" novalidate class="mt-5 flex min-h-0 flex-1 flex-col">
                 <div class="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
                 <div class="flex flex-wrap gap-1 rounded-lg bg-sharm-sand/60 p-1">
                     <template x-for="tab in langTabs" :key="tab.id">
@@ -606,9 +606,25 @@ function packageManager() {
             this.form.available_times.splice(index, 1)
         },
 
+        validateHours() {
+            const hours = Number(this.form.hours)
+            if (!String(this.form.hours ?? '').trim() || !Number.isFinite(hours)
+                || hours < 0.5 || hours > 24 || !Number.isInteger(hours * 2)) {
+                this.errors.hours = ['Duration must be between 0.5 and 24 hours in 0.5-hour increments.']
+                return false
+            }
+            delete this.errors.hours
+            return true
+        },
+
         async submitModal() {
-            this.submitting = true
+            if (this.submitting) return
             this.errors = {}
+            if (!this.validateHours()) {
+                window.toastFromResponse({ errors: this.errors })
+                return
+            }
+            this.submitting = true
 
             const url = this.editingTier
                 ? this.tierUrl(this.editingTier.hours)
@@ -624,7 +640,7 @@ function packageManager() {
                     body: this.buildFormData(),
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
 
                 if (!res.ok) {
                     if (data.errors) this.errors = data.errors
@@ -652,7 +668,7 @@ function packageManager() {
                     method: 'PATCH',
                     headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
                 })
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (res.ok) {
                     tier.is_active = data.is_active
                     window.showToast('success', data.message)
@@ -670,7 +686,7 @@ function packageManager() {
                     method: 'PATCH',
                     headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
                 })
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (res.ok) {
                     tier.is_featured = data.is_featured
                     window.showToast('success', data.message)
@@ -695,7 +711,7 @@ function packageManager() {
                     method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
                 })
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (res.ok) {
                     this.tiers = this.tiers.filter(t => t.hours !== hours)
                     window.showToast('success', data.message)

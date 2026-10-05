@@ -17,10 +17,10 @@ class StoreAdminBookingRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
             // Ad-hoc bookings are recorded after the session happened.
-            'session_date' => ['required', 'date', 'before_or_equal:today'],
+            'session_date' => ['required', 'string', 'date_format:Y-m-d', 'before_or_equal:'.now(config('booking.timezone'))->format('Y-m-d')],
             'session_time' => ['required', 'string', 'size:5', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
             'country_code' => ['required', 'string', 'max:5', Rule::in(array_keys(config('countries.dial_codes', [])))],
-            'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9\s\-]+$/', 'min:6'],
+            'phone' => ['required', 'string', 'max:'.config('booking.validation.phone_max'), 'regex:/^[0-9]+$/', 'min:'.config('booking.validation.phone_min')],
             'currency' => ['required', Rule::in(array_keys(config('currencies.booking', [])))],
             'amount' => ['required', 'numeric', 'min:0.01', 'max:99999999.99', 'decimal:0,2'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -29,16 +29,17 @@ class StoreAdminBookingRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $countryCode = trim((string) $this->input('country_code'));
-        if ($countryCode !== '' && ! str_starts_with($countryCode, '+')) {
-            $countryCode = '+'.$countryCode;
+        if (is_string($this->input('country_code'))) {
+            $countryCode = trim($this->input('country_code'));
+            $this->merge(['country_code' => $countryCode !== '' && ! str_starts_with($countryCode, '+') ? '+'.$countryCode : $countryCode]);
         }
-
-        $this->merge([
-            'country_code' => $countryCode,
-            'phone' => preg_replace('/[\s\-]+/', '', (string) $this->input('phone')),
-            'notes' => filled($this->input('notes')) ? trim((string) $this->input('notes')) : null,
-        ]);
+        if (is_string($this->input('phone'))) {
+            $this->merge(['phone' => preg_replace('/[\s\-]+/u', '', $this->input('phone'))]);
+        }
+        if (is_string($this->input('notes'))) {
+            $notes = trim($this->input('notes'));
+            $this->merge(['notes' => $notes === '' ? null : $notes]);
+        }
     }
 
     public function messages(): array

@@ -56,6 +56,7 @@
 
 <div>
     <label for="{{ $dateId }}" class="mb-1.5 block text-sm font-medium text-sharm-deep">{{ __('site.booking.date') }}</label>
+    <p class="mb-2 text-xs text-sharm-mist">{{ __('site.booking.validation.timezone_label') }}</p>
     <input
         id="{{ $dateId }}"
         type="text"
@@ -69,7 +70,7 @@
     <p class="mt-1 text-xs text-red-500" x-show="errors.session_date" x-text="errors.session_date?.[0]"></p>
 </div>
 
-<div x-show="form.package_id && form.session_date" x-cloak x-transition>
+<div data-booking-field="session_time" tabindex="-1" x-show="form.package_id && form.session_date" x-cloak x-transition>
     <div x-show="availableSlots().length > 0">
         <p class="mb-3 block text-sm font-medium text-sharm-deep">{{ __('site.booking.time') }}</p>
         <div
@@ -96,8 +97,8 @@
         <p class="mt-1 text-xs leading-relaxed text-sharm-mist">{{ __('site.booking.no_slots') }}</p>
     </div>
 
-    <p class="mt-1.5 text-xs text-red-500" x-show="errors.session_time" x-text="errors.session_time?.[0]"></p>
 </div>
+<p class="mt-1.5 text-xs text-red-500" x-show="errors.session_time" x-text="errors.session_time?.[0]"></p>
 
 <div>
     <label for="{{ $phoneRef }}-field" class="mb-1.5 block text-sm font-medium text-sharm-deep">{{ __('site.booking.phone') }}</label>

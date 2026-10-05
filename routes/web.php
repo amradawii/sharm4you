@@ -25,19 +25,19 @@ Route::middleware('locale')->group(function () {
     Route::get('/gallery/{album:slug}', [GalleryController::class, 'show'])->name('gallery.album');
 
     Route::post('/book-session', [BookSessionController::class, 'store'])
-        ->middleware('throttle:3,1')
+        ->middleware('throttle:bookings')
         ->name('book-session');
 
     Route::post('/review', [ReviewController::class, 'store'])
-        ->middleware('throttle:3,1')
+        ->middleware('throttle:reviews')
         ->name('review.store');
 
-    Route::get('/my-photos', [PhotoDeliveryController::class, 'form'])->name('my-photos');
+    Route::get('/my-photos', [PhotoDeliveryController::class, 'form'])->middleware('private.photos')->name('my-photos');
     Route::post('/my-photos', [PhotoDeliveryController::class, 'show'])
-        ->middleware('throttle:5,1')
+        ->middleware(['private.photos', 'throttle:photo-lookup'])
         ->name('my-photos.lookup');
     Route::post('/my-photos/download-all', [PhotoDeliveryController::class, 'downloadAll'])
-        ->middleware('throttle:3,1')
+        ->middleware(['private.photos', 'throttle:photo-zip'])
         ->name('my-photos.download-all');
 });
 
@@ -58,14 +58,14 @@ Route::prefix('{locale}')
         });
 
         Route::post('/book-session', [BookSessionController::class, 'store'])
-            ->middleware('throttle:3,1');
+            ->middleware('throttle:bookings');
 
         Route::post('/review', [ReviewController::class, 'store'])
-            ->middleware('throttle:3,1');
+            ->middleware('throttle:reviews');
 
-        Route::get('/my-photos', [PhotoDeliveryController::class, 'form']);
+        Route::get('/my-photos', [PhotoDeliveryController::class, 'form'])->middleware('private.photos');
         Route::post('/my-photos', [PhotoDeliveryController::class, 'show'])
-            ->middleware('throttle:5,1');
+            ->middleware(['private.photos', 'throttle:photo-lookup']);
         Route::post('/my-photos/download-all', [PhotoDeliveryController::class, 'downloadAll'])
-            ->middleware('throttle:3,1');
+            ->middleware(['private.photos', 'throttle:photo-zip']);
     });

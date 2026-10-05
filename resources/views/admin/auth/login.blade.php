@@ -60,7 +60,7 @@
                                 body: JSON.stringify(this.form),
                             })
 
-                            const data = await res.json()
+                            const data = await window.readJsonResponse(res)
 
                             if (res.ok && data.success) {
                                 window.showToast('success', data.message)

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Booking;
 use App\Models\Package;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class PublicBookingTest extends TestCase
@@ -129,6 +130,51 @@ class PublicBookingTest extends TestCase
         $this->postJson(route('book-session'), [])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['name', 'phone', 'country_code', 'package_id', 'session_date', 'session_time']);
+    }
+
+    public function test_short_name_and_meaningless_phone_are_rejected(): void
+    {
+        $this->postJson(route('book-session'), $this->validPayload(['name' => 'A', 'phone' => '---', 'country_code' => '+9999']))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['name', 'phone', 'country_code']);
+
+        $this->assertSame(0, Booking::count());
+    }
+
+    public function test_phone_formatting_is_normalized(): void
+    {
+        $this->postJson(route('book-session'), $this->validPayload(['phone' => "100-200\u{00a0}3000"]))->assertOk();
+        $this->assertSame('1002003000', Booking::sole()->phone);
+    }
+
+    public function test_noncanonical_dates_are_rejected(): void
+    {
+        $this->postJson(route('book-session'), $this->validPayload([
+            'session_date' => now()->addDay()->format('Y-m-d').' 00:00:00',
+        ]))->assertStatus(422)->assertJsonValidationErrors(['session_date']);
+    }
+
+    public function test_today_slots_are_checked_in_sharm_time(): void
+    {
+        $this->travelTo(Carbon::parse('2026-10-03T12:00:00Z'));
+        $this->postJson(route('book-session'), $this->validPayload([
+            'session_date' => '2026-10-03', 'session_time' => '14:00',
+        ]))->assertStatus(422)->assertJsonValidationErrors(['session_time']);
+    }
+
+    public function test_yesterday_in_sharm_is_rejected_at_the_utc_day_boundary(): void
+    {
+        $this->travelTo(Carbon::parse('2026-10-03T21:30:00Z'));
+        $this->postJson(route('book-session'), $this->validPayload([
+            'session_date' => '2026-10-03',
+        ]))->assertStatus(422)->assertJsonValidationErrors(['session_date']);
+    }
+
+    public function test_array_inputs_return_validation_errors(): void
+    {
+        $this->postJson(route('book-session'), $this->validPayload([
+            'phone' => ['bad'], 'country_code' => ['bad'], 'package_id' => ['bad'], 'session_date' => ['bad'], 'session_time' => ['bad'],
+        ]))->assertStatus(422)->assertJsonValidationErrors(['phone', 'country_code', 'package_id', 'session_date', 'session_time']);
     }
 
     public function test_invalid_email_format_is_rejected(): void

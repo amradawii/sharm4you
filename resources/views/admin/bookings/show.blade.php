@@ -14,6 +14,7 @@
         storage: {{ Illuminate\Support\Js::from($storage) }},
         existingCode: {{ Illuminate\Support\Js::from($booking->delivery_code) }},
         existingMessage: {{ Illuminate\Support\Js::from($whatsappMessage) }},
+        limits: {{ Illuminate\Support\Js::from(['maxPerDrop' => config('photo_delivery.max_per_drop'), 'maxTotal' => config('photo_delivery.max_per_booking'), 'maxBytes' => config('photo_delivery.max_upload_kb') * 1024]) }},
     })"
     x-cloak
 >
@@ -82,7 +83,7 @@
                         :style="`width: ${Math.min(100, storage.percent)}%`"
                     ></div>
                 </div>
-                <p class="mt-1.5 text-[10px] text-sharm-mist" x-text="`${storage.percent}% used — pay-as-you-go begins past the 10 GB free tier`"></p>
+                <p class="mt-1.5 text-[10px] text-sharm-mist" x-text="`${storage.percent}% used — approximate tracked storage; check Cloudflare for billing and operation limits`"></p>
             </div>
         </div>
 
@@ -91,7 +92,7 @@
             {{-- Upload panel --}}
             <div class="admin-card p-5">
                 <h2 class="text-sm font-semibold text-sharm-deep">Upload photos for the customer</h2>
-                <p class="mt-1 text-xs text-sharm-mist">Drag up to {{ $maxPerDrop = 10 }} images per drop (max 30 total, up to 10 MB each). Images are compressed and stored privately on Cloudflare R2 — nothing is kept on this server.</p>
+                <p class="mt-1 text-xs text-sharm-mist">Drag up to {{ config('photo_delivery.max_per_drop') }} images per drop (max {{ config('photo_delivery.max_per_booking') }} per booking, up to {{ config('photo_delivery.max_upload_kb') / 1024 }} MB each and {{ config('photo_delivery.max_pixels') / 1000000 }} MP). Images are compressed and stored privately on Cloudflare R2. Large originals may need resizing to fit this server’s processing budget.</p>
 
                 {{-- Dropzone --}}
                 <label
@@ -104,8 +105,10 @@
                     <svg class="h-8 w-8 text-sharm-mist" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
                     <span class="mt-2 text-sm font-medium text-sharm-deep">Drop images here or click to browse</span>
                     <span class="mt-0.5 text-[11px] text-sharm-mist">JPEG, PNG, WebP · max 10 MB each</span>
-                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden" x-ref="fileInput" @change="onSelect($event)">
+                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden" x-ref="fileInput" :disabled="uploading || remainingSlots === 0" @change="onSelect($event)">
                 </label>
+
+                <p class="mt-2 text-xs text-sharm-mist"><span x-text="remainingSlots"></span> slots remaining, including queued photos.</p>
 
                 {{-- Preview grid --}}
                 <template x-if="queue.length">
@@ -166,9 +169,10 @@
                 <div class="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5" x-show="photos.length">
                     <template x-for="photo in photos" :key="photo.id">
                         <div class="group relative aspect-square overflow-hidden rounded-lg border border-sharm-deep/10 bg-sharm-sand">
-                            <img :src="photo.url" class="h-full w-full object-cover" loading="lazy" :alt="photo.original_name">
+                            <img :src="photo.url" class="h-full w-full object-cover" loading="lazy" :alt="photo.filename">
                             <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-sharm-deep/80 to-transparent p-1.5">
-                                <p class="truncate text-[9px] text-white/90" x-text="photo.size_label"></p>
+                                <p class="truncate text-[9px] text-white/90" :title="photo.filename" x-text="photo.filename"></p>
+                                <p class="text-[9px] text-white/70" x-text="photo.size_label"></p>
                             </div>
                             <button
                                 type="button"
@@ -187,6 +191,8 @@
             <div class="admin-card p-5">
                 <h2 class="text-sm font-semibold text-sharm-deep">Share with the customer</h2>
                 <p class="mt-1 text-xs text-sharm-mist">Generate an access code, then send the ready-made message on WhatsApp. The customer opens the link and enters the booking number + code to view and download their photos.</p>
+
+                <p class="mt-2 text-xs text-sharm-mist">Regenerating the code stops future lookups with the old code. Already issued photo links remain valid for up to {{ \App\Models\BookingPhoto::LINK_TTL_HOURS }} hours.</p>
 
                 <div class="mt-4 flex flex-wrap items-center gap-3">
                     <button type="button" class="btn-primary" @click="generateCode()" :disabled="generating">
@@ -250,11 +256,12 @@ function deliveryManager(config) {
         generating: false,
 
         // Limits
-        maxPerDrop: 10,
-        maxTotal: 30,
-        maxBytes: 10 * 1024 * 1024,
+        maxPerDrop: config.limits.maxPerDrop,
+        maxTotal: config.limits.maxTotal,
+        maxBytes: config.limits.maxBytes,
         allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
 
+        get remainingSlots() { return Math.max(0, this.maxTotal - this.photos.length - this.queue.filter(i => i.status !== 'done').length) },
         get hasPending() { return this.queue.some(i => i.status === 'pending') },
         get pendingCount() { return this.queue.filter(i => i.status === 'pending').length },
         get uploadProgress() {
@@ -272,13 +279,17 @@ function deliveryManager(config) {
         },
 
         addFiles(files) {
+            if (this.uploading) {
+                window.showToast('warning', 'Wait for the current upload to finish before adding more photos.')
+                return
+            }
             if (files.length > this.maxPerDrop) {
                 window.showToast('warning', `You can add up to ${this.maxPerDrop} images per drop.`)
                 files = files.slice(0, this.maxPerDrop)
             }
             for (const file of files) {
-                if (this.queue.length >= this.maxTotal) {
-                    window.showToast('warning', `Preview is limited to ${this.maxTotal} images. Upload these first, then add more.`)
+                if (this.remainingSlots === 0) {
+                    window.showToast('warning', `Each booking is limited to ${this.maxTotal} photos, including the current queue.`)
                     break
                 }
                 if (!this.allowedTypes.includes(file.type)) {
@@ -286,7 +297,7 @@ function deliveryManager(config) {
                     continue
                 }
                 if (file.size > this.maxBytes) {
-                    window.showToast('error', `${file.name}: exceeds the 10 MB limit.`)
+                    window.showToast('error', `${file.name}: exceeds the ${this.maxBytes / (1024 * 1024)} MB limit.`)
                     continue
                 }
                 this.queue.push({
@@ -328,18 +339,20 @@ function deliveryManager(config) {
                         headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
                         body: fd,
                     })
-                    const data = await res.json()
+                    const data = await window.readJsonResponse(res)
                     if (res.ok && data.success) {
                         item.status = 'done'
                         this.photos.push(data.photo)
                         this.storage = data.storage
                     } else {
                         item.status = 'error'
-                        item.error = data.message || 'Upload failed.'
+                        item.error = Object.values(data.errors || {}).flat().find(Boolean) || data.message || 'Upload failed.'
+                        window.toastFromResponse(data, 'Upload failed.')
                     }
                 } catch (e) {
                     item.status = 'error'
-                    item.error = 'Network error.'
+                    item.error = 'Network error. Reload delivered photos before retrying to check whether this photo was saved.'
+                    window.showToast('error', item.error)
                 }
             }
 
@@ -362,7 +375,7 @@ function deliveryManager(config) {
                     method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
                 })
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (res.ok && data.success) {
                     this.photos = this.photos.filter(p => p.id !== photo.id)
                     this.storage = data.storage
@@ -376,13 +389,15 @@ function deliveryManager(config) {
         },
 
         async generateCode() {
+            if (this.generating) return
+            if (this.code && !confirm('Regenerate the code? The old code will stop working, but already issued photo links remain valid for up to 24 hours.')) return
             this.generating = true
             try {
                 const res = await fetch(this.deliveryUrl, {
                     method: 'PATCH',
                     headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
                 })
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (res.ok && data.success) {
                     this.code = data.code
                     this.whatsappMessage = data.whatsapp_message

@@ -47,6 +47,19 @@
             pending.push({ type, message })
         }
 
+        window.readJsonResponse = async function (response, fallback) {
+            const parsed = await response.json().catch(() => ({}))
+            const data = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+            if (response.status >= 500) return { success: false, message: fallback || 'Something went wrong. Please try again.' }
+            if (response.status === 419) return { success: false, message: fallback || 'Your session expired. Refresh the page and try again.' }
+            if (response.status === 401 && !data.errors) return { success: false, message: fallback || 'Please sign in again to continue.' }
+            if (data.warning) window.showToast('warning', data.warning)
+            if (!response.ok && !data.message && !data.errors) {
+                data.message = fallback || (response.status === 429 ? 'Too many requests. Please wait and try again.' : 'Unable to complete the request. Please try again.')
+            }
+            return data
+        }
+
         window.toastFromResponse = function (data, fallback) {
             if (data?.errors) {
                 const first = Object.values(data.errors).flat().find(Boolean)

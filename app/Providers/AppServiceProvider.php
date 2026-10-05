@@ -14,13 +14,22 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('admin-login', function (Request $request) {
-            return Limit::perMinute(5)
-                ->by($request->input('username').'|'.$request->ip())
-                ->response(fn () => response()->json([
-                    'success' => false,
-                    'message' => 'Too many login attempts. Please wait 60 seconds before trying again.',
-                ], 429));
+            $username = $request->input('username');
+            $username = is_string($username) ? strtolower(trim($username)) : '';
+            $response = fn (Request $request, array $headers) => response()->json([
+                'success' => false,
+                'message' => 'Too many login attempts. Please wait before trying again.',
+            ], 429, $headers);
+
+            return [
+                Limit::perMinute(5)->by('username:'.hash('sha256', $username).'|'.$request->ip())->response($response),
+                Limit::perMinute(20)->by('ip:'.$request->ip())->response($response),
+            ];
         });
+
+        foreach (['bookings' => 3, 'reviews' => 3, 'photo-lookup' => 5, 'photo-zip' => 3] as $name => $attempts) {
+            RateLimiter::for($name, fn (Request $request) => Limit::perMinute($attempts)->by($request->ip()));
+        }
 
         // Packages + slots are now passed only by the routes that actually show
         // the booking modal (home, services). The layout falls back to an empty

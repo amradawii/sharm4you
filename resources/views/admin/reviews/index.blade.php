@@ -134,7 +134,7 @@
                 <p class="mt-1 text-xs text-sharm-mist">Reviews keep their original language and appear verbatim on the home Testimonials.</p>
             </div>
 
-            <form @submit.prevent="submitModal()" class="mt-5 flex min-h-0 flex-1 flex-col">
+            <form @submit.prevent="submitModal()" novalidate class="mt-5 flex min-h-0 flex-1 flex-col">
                 <div class="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
                     <div>
                         <label class="admin-label">Name <span class="text-red-400">*</span></label>
@@ -172,6 +172,7 @@
                         <input type="checkbox" x-model="form.is_featured" class="rounded border-sharm-deep/20">
                         Feature on home Testimonials
                     </label>
+                    <p class="text-xs text-red-500" x-show="errors.is_featured" x-text="errors.is_featured?.[0]"></p>
                 </div>
 
                 <div class="mt-4 flex shrink-0 items-center justify-end gap-3 border-t border-sharm-deep/8 pt-4">
@@ -298,7 +299,7 @@ function reviewManager() {
                     body: JSON.stringify(this.form),
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (!res.ok) {
                     if (data.errors) this.errors = data.errors
                     window.toastFromResponse(data, 'Failed to save review.')
@@ -326,7 +327,7 @@ function reviewManager() {
                     },
                     body: JSON.stringify({ status }),
                 })
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (res.ok) {
                     this.upsertReview(data.review)
                     window.showToast('success', data.message)
@@ -344,7 +345,7 @@ function reviewManager() {
                     method: 'PATCH',
                     headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
                 })
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (res.ok) {
                     this.upsertReview(data.review)
                     window.showToast('success', data.message)
@@ -369,7 +370,7 @@ function reviewManager() {
                     method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
                 })
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (res.ok) {
                     this.reviews = this.reviews.filter(r => r.id !== id)
                     window.showToast('success', data.message)

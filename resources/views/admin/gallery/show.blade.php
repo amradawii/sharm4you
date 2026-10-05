@@ -174,7 +174,7 @@
             <h2 class="text-lg font-semibold text-sharm-deep">Edit Alt Text</h2>
             <p class="mt-1 text-xs text-sharm-mist" x-text="altForm.original_name"></p>
 
-            <form @submit.prevent="submitAlt()" class="mt-5 space-y-4">
+            <form @submit.prevent="submitAlt()" novalidate class="mt-5 space-y-4">
                 <div>
                     <label class="admin-label">Alt — English</label>
                     <input type="text" x-model="altForm.alt_en" class="admin-input" placeholder="Describe the image in English">
@@ -335,7 +335,7 @@ function photoManager() {
                     body: formData,
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
 
                 if (!res.ok) {
                     queueItems.forEach(q => q.status = 'error')
@@ -367,7 +367,7 @@ function photoManager() {
                     },
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
 
                 if (res.ok) {
                     photo.is_featured = data.is_featured
@@ -417,7 +417,7 @@ function photoManager() {
                     }),
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
 
                 if (res.ok) {
                     // Update local
@@ -460,7 +460,7 @@ function photoManager() {
                     },
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
 
                 if (res.ok) {
                     // If it was featured, decrement count

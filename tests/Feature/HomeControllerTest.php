@@ -123,6 +123,17 @@ class HomeControllerTest extends TestCase
         $this->get('/ru')->assertOk();
     }
 
+    public function test_booking_link_falls_back_to_localized_services_without_a_modal(): void
+    {
+        $this->get('/ru/about')->assertOk()->assertSee(url('/ru/services').'#book-session', false)
+            ->assertDontSee('open-booking-modal', false);
+    }
+
+    public function test_services_without_packages_does_not_initialize_missing_booking_code(): void
+    {
+        $this->get('/services')->assertOk()->assertDontSee('x-data="bookingForm(', false);
+    }
+
     public function test_en_redirects_to_root(): void
     {
         $this->get('/en')->assertRedirect('/');

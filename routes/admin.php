@@ -10,7 +10,7 @@ use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ReviewController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('admin')->name('admin.')->middleware('admin.locale')->group(function () {
 
     Route::middleware('guest:admin')->group(function () {
         Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -43,10 +43,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Packages (tier = one offering across EN/IT/RU locales)
         Route::get('/packages', [PackageController::class, 'index'])->name('packages.index');
         Route::post('/packages', [PackageController::class, 'store'])->name('packages.store');
-        Route::put('/packages/tier/{hours}', [PackageController::class, 'update'])->where('hours', '[0-9.]+')->name('packages.tier.update');
-        Route::patch('/packages/tier/{hours}/toggle', [PackageController::class, 'toggleTier'])->where('hours', '[0-9.]+')->name('packages.tier.toggle');
-        Route::patch('/packages/tier/{hours}/featured', [PackageController::class, 'toggleFeaturedTier'])->where('hours', '[0-9.]+')->name('packages.tier.featured');
-        Route::delete('/packages/tier/{hours}', [PackageController::class, 'destroyTier'])->where('hours', '[0-9.]+')->name('packages.tier.destroy');
+        Route::put('/packages/tier/{hours}', [PackageController::class, 'update'])->where('hours', '[0-9]+(?:\.[0-9]+)?')->name('packages.tier.update');
+        Route::patch('/packages/tier/{hours}/toggle', [PackageController::class, 'toggleTier'])->where('hours', '[0-9]+(?:\.[0-9]+)?')->name('packages.tier.toggle');
+        Route::patch('/packages/tier/{hours}/featured', [PackageController::class, 'toggleFeaturedTier'])->where('hours', '[0-9]+(?:\.[0-9]+)?')->name('packages.tier.featured');
+        Route::delete('/packages/tier/{hours}', [PackageController::class, 'destroyTier'])->where('hours', '[0-9]+(?:\.[0-9]+)?')->name('packages.tier.destroy');
 
         // Bookings — no delete route on purpose: bookings are financial records
         // and stay append-only (corrections happen via edit or status).

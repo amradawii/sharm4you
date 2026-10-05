@@ -6,6 +6,7 @@
 .env.testing
 .phpactor.json
 .phpunit.result.cache
+/.devin
 /.fleet
 /.idea
 /.nova
@@ -19,6 +20,7 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/framework/lsp-*.php
 /vendor
 Homestead.json
 Homestead.yaml

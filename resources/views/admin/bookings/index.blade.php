@@ -182,7 +182,7 @@
                 </p>
             </div>
 
-            <form @submit.prevent="submitForm()" class="mt-5 flex min-h-0 flex-1 flex-col">
+            <form @submit.prevent="submitForm()" novalidate class="mt-5 flex min-h-0 flex-1 flex-col">
                 <div class="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
                     <div>
                         <label class="admin-label">Customer name <span class="text-red-400">*</span></label>
@@ -193,7 +193,7 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label class="admin-label">Session date <span class="text-red-400">*</span></label>
-                            <input type="date" x-model="form.session_date" max="{{ now()->format('Y-m-d') }}" class="admin-input">
+                            <input type="date" x-model="form.session_date" max="{{ now(config('booking.timezone'))->format('Y-m-d') }}" class="admin-input">
                             <p class="mt-1 text-[10px] text-sharm-mist">Finished sessions only — today or earlier.</p>
                             <p class="mt-1 text-xs text-red-500" x-show="errors.session_date" x-text="errors.session_date?.[0]"></p>
                         </div>
@@ -294,7 +294,7 @@ function bookingManager() {
         csrf: document.querySelector('meta[name="csrf-token"]').content,
         currencies: @json(array_keys($currencies)),
         dialCodes: @json(array_keys($dialCodes)),
-        today: @json(now()->format('Y-m-d')),
+        today: @json(now(config('booking.timezone'))->format('Y-m-d')),
         form: {},
 
         // Mirrors App\Http\Requests\Admin\StoreAdminBookingRequest::messages()
@@ -404,7 +404,7 @@ function bookingManager() {
             const phone = (this.form.phone || '').replace(/[\s-]+/g, '')
             if (!phone) {
                 this.errors.phone = [m.phone_required]
-            } else if (!/^[0-9]+$/.test(phone) || phone.length < 6 || phone.length > 20) {
+            } else if (!/^[0-9]+$/.test(phone) || phone.length < {{ config('booking.validation.phone_min') }} || phone.length > {{ config('booking.validation.phone_max') }}) {
                 this.errors.phone = [m.phone_invalid]
             }
 
@@ -433,7 +433,10 @@ function bookingManager() {
         },
 
         async submitForm() {
-            if (!this.validateForm()) return
+            if (!this.validateForm()) {
+                window.toastFromResponse({ errors: this.errors })
+                return
+            }
 
             this.submitting = true
             const url = this.editingBooking
@@ -451,7 +454,7 @@ function bookingManager() {
                     body: JSON.stringify(this.form),
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (!res.ok) {
                     if (data.errors) this.errors = data.errors
                     window.toastFromResponse(data, 'Failed to save the booking.')
@@ -488,7 +491,7 @@ function bookingManager() {
                     },
                     body: JSON.stringify({ notes: this.notesText }),
                 })
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (res.ok) {
                     this.notesById[id] = data.booking.notes
                     window.showToast('success', data.message)
@@ -518,7 +521,7 @@ function bookingManager() {
                     },
                     body: JSON.stringify({ status: newStatus }),
                 })
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
                 if (res.ok) {
                     // Update the badge color in place from the server response.
                     selectEl.className = 'admin-status-select ' + data.booking.status_color

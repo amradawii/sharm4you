@@ -36,6 +36,7 @@
         },
 
         async submitInfo() {
+            if (this.infoLoading) return
             this.infoLoading = true
             this.infoErrors = {}
 
@@ -60,7 +61,7 @@
                     body: fd,
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
 
                 if (res.ok && data.success) {
                     if (data.photo_url) this.photoPreview = data.photo_url
@@ -72,7 +73,10 @@
                 }
 
                 if (data.errors) this.infoErrors = data.errors
-            } catch {}
+                window.toastFromResponse(data)
+            } catch {
+                window.showToast('error', 'Network error. Please try again.')
+            }
 
             this.infoLoading = false
         },
@@ -80,6 +84,7 @@
         // Security form
         passLoading: false,
         passErrors: {},
+        maxPasswordBytes: @js(config('hashing.driver') === 'bcrypt' ? 72 : 255),
         passForm: { current_password: '', password: '', password_confirmation: '' },
         showCurrent: false,
         showNew: false,
@@ -116,8 +121,15 @@
         },
 
         async submitPassword() {
-            this.passLoading = true
+            if (this.passLoading) return
             this.passErrors = {}
+            if (new TextEncoder().encode(this.passForm.password).length > this.maxPasswordBytes) {
+                const message = `New passwords must not exceed ${this.maxPasswordBytes} UTF-8 bytes. Some characters use more than one byte.`
+                this.passErrors.password = [message]
+                window.showToast('error', message)
+                return
+            }
+            this.passLoading = true
 
             try {
                 const res = await fetch(@js(route('admin.profile.password')), {
@@ -130,7 +142,7 @@
                     body: JSON.stringify(this.passForm),
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
 
                 if (res.ok && data.success) {
                     this.passForm = { current_password: '', password: '', password_confirmation: '' }
@@ -141,7 +153,10 @@
                 }
 
                 if (data.errors) this.passErrors = data.errors
-            } catch {}
+                window.toastFromResponse(data)
+            } catch {
+                window.showToast('error', 'Network error. Please try again.')
+            }
 
             this.passLoading = false
         },
@@ -169,7 +184,7 @@
 
     {{-- Info tab --}}
     <div x-show="tab === 'info'" x-cloak class="admin-card p-6 sm:p-8">
-        <form @submit.prevent="submitInfo" class="space-y-6">
+        <form @submit.prevent="submitInfo" novalidate class="space-y-6">
 
             {{-- Photo --}}
             <div class="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
@@ -229,7 +244,7 @@
 
     {{-- Security tab --}}
     <div x-show="tab === 'security'" x-cloak class="admin-card p-6 sm:p-8">
-        <form @submit.prevent="submitPassword" class="space-y-5">
+        <form @submit.prevent="submitPassword" novalidate class="space-y-5">
 
             <div>
                 <label for="current_password" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-sharm-mist">Current password</label>
@@ -252,6 +267,7 @@
                         <svg x-show="showNew" x-cloak class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
                     </button>
                 </div>
+                <p class="mt-1.5 text-xs text-sharm-mist">Maximum <span x-text="maxPasswordBytes"></span> UTF-8 bytes; some characters use more than one byte.</p>
                 <p x-show="passErrors.password" x-text="passErrors.password?.[0]" class="mt-1.5 text-xs text-red-500" x-cloak></p>
 
                 {{-- Password meter --}}

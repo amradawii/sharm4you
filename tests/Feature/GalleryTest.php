@@ -78,6 +78,14 @@ class GalleryTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_inactive_album_photos_are_hidden_from_both_featured_sections(): void
+    {
+        $album = $this->createAlbumWithPhotos(active: false);
+        $this->get('/')->assertOk()->assertDontSee('storage/albums/'.$album->slug.'/photo1.jpg', false);
+        $this->get('/gallery')->assertOk()->assertDontSee('storage/albums/'.$album->slug.'/photo1.jpg', false);
+        $this->get('/ru/gallery')->assertOk()->assertDontSee('storage/albums/'.$album->slug.'/photo1.jpg', false);
+    }
+
     public function test_locale_prefixed_gallery_index_loads(): void
     {
         $this->createAlbumWithPhotos();

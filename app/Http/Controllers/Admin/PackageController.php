@@ -6,14 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePackageTierRequest;
 use App\Http\Requests\Admin\UpdatePackageTierRequest;
 use App\Models\Package;
+use App\Support\PhotoStorage;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Exceptions\DecoderException;
 use Intervention\Image\ImageManager;
+use Throwable;
 
 class PackageController extends Controller
 {
@@ -38,16 +43,25 @@ class PackageController extends Controller
     public function store(StorePackageTierRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $data['hours'] = number_format((float) $data['hours'], 1, '.', '');
         $sortOrder = (int) Package::max('sort_order') + 1;
         $image = $request->hasFile('image')
             ? $this->storePackageImage($request->file('image'))
             : null;
 
-        DB::transaction(function () use ($data, $sortOrder, $image) {
-            foreach (self::CURRENCY_PRICE_MAP as $currency => $priceKey) {
-                Package::create($this->tierAttributes($data, $currency, $data[$priceKey], $sortOrder, $image));
+        try {
+            DB::transaction(function () use ($data, $sortOrder, $image) {
+                foreach (self::CURRENCY_PRICE_MAP as $currency => $priceKey) {
+                    Package::create($this->tierAttributes($data, $currency, $data[$priceKey], $sortOrder, $image));
+                }
+            });
+        } catch (Throwable $e) {
+            PhotoStorage::cleanup(self::IMAGE_DISK, $image ? self::IMAGE_DIR.'/'.$image : null);
+            if ($e instanceof UniqueConstraintViolationException) {
+                throw ValidationException::withMessages(['hours' => 'A package with this duration already exists.']);
             }
-        });
+            throw $e;
+        }
 
         $tier = $this->serializeTier(
             Package::where('hours', $data['hours'])->get()
@@ -60,9 +74,11 @@ class PackageController extends Controller
         ]);
     }
 
-    public function update(UpdatePackageTierRequest $request, float $hours): JsonResponse
+    public function update(UpdatePackageTierRequest $request, string $hours): JsonResponse
     {
+        $hours = $this->resolveHours($hours);
         $data = $request->validated();
+        $data['hours'] = number_format((float) $data['hours'], 1, '.', '');
         $packages = Package::where('hours', $hours)->get();
 
         if ($packages->isEmpty()) {
@@ -72,17 +88,32 @@ class PackageController extends Controller
         $oldImage = $packages->first()->image;
         $image = $this->resolveTierImage($request, $oldImage);
 
-        DB::transaction(function () use ($packages, $data, $image) {
-            foreach ($packages as $package) {
-                $priceKey = self::CURRENCY_PRICE_MAP[$package->currency] ?? null;
-                $package->update([
-                    ...$this->sharedTierAttributes($data),
-                    'hours' => $data['hours'],
-                    'price' => $priceKey ? $data[$priceKey] : $package->price,
-                    'image' => $image,
-                ]);
+        try {
+            DB::transaction(function () use ($packages, $data, $image) {
+                foreach ($packages as $package) {
+                    $priceKey = self::CURRENCY_PRICE_MAP[$package->currency] ?? null;
+                    $package->update([
+                        ...$this->sharedTierAttributes($data),
+                        'hours' => $data['hours'],
+                        'price' => $priceKey ? $data[$priceKey] : $package->price,
+                        'image' => $image,
+                    ]);
+                }
+            });
+        } catch (Throwable $e) {
+            if ($image && $image !== $oldImage) {
+                PhotoStorage::cleanup(self::IMAGE_DISK, self::IMAGE_DIR.'/'.$image);
             }
-        });
+            if ($e instanceof UniqueConstraintViolationException) {
+                throw ValidationException::withMessages(['hours' => 'A package with this duration already exists.']);
+            }
+            throw $e;
+        }
+        $warning = null;
+        if ($oldImage && $oldImage !== $image && ! Package::where('image', $oldImage)->exists()
+            && ! PhotoStorage::cleanup(self::IMAGE_DISK, self::IMAGE_DIR.'/'.$oldImage)) {
+            $warning = 'The package was saved, but the old image could not be removed. Contact the developer.';
+        }
 
         $tier = $this->serializeTier(
             Package::where('hours', $data['hours'])->get()
@@ -92,11 +123,13 @@ class PackageController extends Controller
             'success' => true,
             'message' => 'Package updated successfully.',
             'tier' => $tier,
+            'warning' => $warning,
         ]);
     }
 
-    public function toggleTier(float $hours): JsonResponse
+    public function toggleTier(string $hours): JsonResponse
     {
+        $hours = $this->resolveHours($hours);
         $packages = Package::where('hours', $hours)->get();
 
         if ($packages->isEmpty()) {
@@ -113,8 +146,9 @@ class PackageController extends Controller
         ]);
     }
 
-    public function toggleFeaturedTier(float $hours): JsonResponse
+    public function toggleFeaturedTier(string $hours): JsonResponse
     {
+        $hours = $this->resolveHours($hours);
         $packages = Package::where('hours', $hours)->get();
 
         if ($packages->isEmpty()) {
@@ -131,15 +165,19 @@ class PackageController extends Controller
         ]);
     }
 
-    public function destroyTier(float $hours): JsonResponse
+    public function destroyTier(string $hours): JsonResponse
     {
+        $hours = $this->resolveHours($hours);
         $packages = Package::where('hours', $hours)->get();
 
         if ($packages->isEmpty()) {
             abort(404);
         }
 
-        $this->deletePackageImage($packages->first()->image);
+        $image = $packages->first()->image;
+        if ($image && ! Package::where('image', $image)->where('hours', '!=', $hours)->exists()) {
+            $this->deletePackageImage($image);
+        }
         Package::where('hours', $hours)->delete();
 
         return response()->json([
@@ -148,22 +186,23 @@ class PackageController extends Controller
         ]);
     }
 
+    private function resolveHours(string $hours): string
+    {
+        abort_if(Validator::make(['hours' => $hours], [
+            'hours' => ['required', 'numeric', 'min:0.5', 'max:24', 'multiple_of:0.5'],
+        ])->fails(), 404);
+
+        return number_format((float) $hours, 1, '.', '');
+    }
+
     private function resolveTierImage(UpdatePackageTierRequest $request, ?string $oldImage): ?string
     {
         if ($request->boolean('remove_image')) {
-            $this->deletePackageImage($oldImage);
-
             return null;
         }
 
         if ($request->hasFile('image')) {
-            $filename = $this->storePackageImage($request->file('image'));
-
-            if ($oldImage && $oldImage !== $filename) {
-                $this->deletePackageImage($oldImage);
-            }
-
-            return $filename;
+            return $this->storePackageImage($request->file('image'));
         }
 
         return $oldImage;
@@ -173,9 +212,14 @@ class PackageController extends Controller
     {
         $filename = Str::uuid()->toString().'.webp';
         $manager = new ImageManager(new GdDriver);
-        $encoded = $manager->read($file->getRealPath())->toWebp(quality: 90);
+        try {
+            $encoded = $manager->read($file->getRealPath())->toWebp(quality: 90);
+        } catch (DecoderException $e) {
+            throw ValidationException::withMessages(['image' => 'This image cannot be decoded. Please re-save it and try again.']);
+        }
 
-        Storage::disk(self::IMAGE_DISK)->put(
+        PhotoStorage::put(
+            self::IMAGE_DISK,
             self::IMAGE_DIR.'/'.$filename,
             (string) $encoded
         );
@@ -189,7 +233,7 @@ class PackageController extends Controller
             return;
         }
 
-        Storage::disk(self::IMAGE_DISK)->delete(self::IMAGE_DIR.'/'.$filename);
+        PhotoStorage::delete(self::IMAGE_DISK, self::IMAGE_DIR.'/'.$filename);
     }
 
     private function tierAttributes(array $data, string $currency, float $price, int $sortOrder, ?string $image): array

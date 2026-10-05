@@ -20,7 +20,7 @@ class BookSessionController extends Controller
             'session_date' => $request->input('session_date'),
             'session_time' => $request->input('session_time'),
             'name' => $request->input('name'),
-            'phone' => preg_replace('/\s+/', '', $request->input('phone')),
+            'phone' => $request->validated('phone'),
             'country_code' => $countryCode,
             'email' => $request->input('email'),
             'status' => Booking::STATUS_NEW,

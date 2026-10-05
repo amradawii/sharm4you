@@ -1,16 +1,22 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "amradawii/sharm4you",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
-    "license": "MIT",
+    "description": "Sharm4You tourist photography agency website and admin panel.",
+    "keywords": ["laravel", "photography", "sharm-el-sheikh"],
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Amr Adawi",
+            "email": "amr.m.adawi@outlook.com"
+        }
+    ],
     "require": {
         "php": "^8.2",
-        "intervention/image": "3.0",
-        "laravel/framework": "^12.0",
+        "intervention/image": "^3.11.9",
+        "laravel/framework": "^12.69.0",
         "laravel/tinker": "^2.10.1",
-        "league/flysystem-aws-s3-v3": "3.0"
+        "league/flysystem-aws-s3-v3": "^3.35.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -47,11 +53,10 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,css --kill-others"
+            "npx --no-install concurrently -c \"#93c5fd,#fdba74\" \"php artisan serve\" \"npm run dev\" --names=server,css --kill-others"
         ],
         "test": [
-            "@php artisan config:clear --ansi",
-            "@php artisan test"
+            "@php vendor/bin/phpunit --do-not-cache-result"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

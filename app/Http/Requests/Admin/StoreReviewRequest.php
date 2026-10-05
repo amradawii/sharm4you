@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Review;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +21,7 @@ class StoreReviewRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'country_code' => ['required', 'string', 'size:2', Rule::in($countries)],
             'comment' => ['required', 'string', 'min:10', 'max:1000'],
-            'status' => ['required', Rule::in(\App\Models\Review::STATUSES)],
+            'status' => ['required', Rule::in(Review::STATUSES)],
             'is_featured' => ['sometimes', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
@@ -28,18 +29,15 @@ class StoreReviewRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $code = strtoupper((string) $this->input('country_code'));
-        $country = config("countries.list.{$code}");
-
-        if ($country) {
-            $this->merge([
-                'country_code' => $code,
-                'country' => $country,
-            ]);
+        if (is_string($this->input('country_code'))) {
+            $this->merge(['country_code' => strtoupper($this->input('country_code'))]);
         }
 
-        if ($this->has('is_featured')) {
-            $this->merge(['is_featured' => filter_var($this->input('is_featured'), FILTER_VALIDATE_BOOLEAN)]);
+        if (is_string($this->input('is_featured'))) {
+            $value = filter_var($this->input('is_featured'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($value !== null) {
+                $this->merge(['is_featured' => $value]);
+            }
         }
     }
 }

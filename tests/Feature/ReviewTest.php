@@ -53,6 +53,12 @@ class ReviewTest extends TestCase
             ->assertJsonValidationErrors(['country_code']);
     }
 
+    public function test_array_country_code_is_a_validation_error(): void
+    {
+        $this->postJson(route('review.store'), $this->validPayload(['country_code' => ['bad']]))
+            ->assertStatus(422)->assertJsonValidationErrors(['country_code']);
+    }
+
     public function test_country_code_is_normalized_to_uppercase(): void
     {
         $this->postJson(route('review.store'), $this->validPayload(['country_code' => 'it']))

@@ -2,6 +2,7 @@
 
 @section('title', __('seo.my_photos.title'))
 @section('meta_description', __('seo.my_photos.description'))
+@section('robots', 'noindex, nofollow')
 
 @section('content')
 @include('partials.page-banner', [
@@ -72,7 +73,7 @@
                                 @click="open({{ $index }})"
                             >
                                 <img
-                                    src="{{ $photo->download_url }}"
+                                    src="{{ $photo->preview_url }}"
                                     alt="{{ $booking->name }} — {{ config('app.name') }}"
                                     loading="lazy"
                                     class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
@@ -103,21 +104,21 @@
                             type="button"
                             class="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center text-2xl text-white/80 transition hover:text-white"
                             @click="close()"
-                            aria-label="Close"
+                            aria-label="{{ __('site.my_photos.close') }}"
                         >&times;</button>
 
                         <button
                             type="button"
-                            class="absolute left-4 top-1/2 z-10 hidden -translate-y-1/2 text-3xl text-white/70 transition hover:text-white sm:block"
+                            class="absolute left-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-sharm-deep/60 text-3xl text-white/80 transition hover:text-white sm:left-4"
                             @click="prev()"
-                            aria-label="Previous"
+                            aria-label="{{ __('site.my_photos.previous') }}"
                         >&lsaquo;</button>
 
                         <button
                             type="button"
-                            class="absolute right-4 top-1/2 z-10 hidden -translate-y-1/2 text-3xl text-white/70 transition hover:text-white sm:block"
+                            class="absolute right-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-sharm-deep/60 text-3xl text-white/80 transition hover:text-white sm:right-4"
                             @click="next()"
-                            aria-label="Next"
+                            aria-label="{{ __('site.my_photos.next') }}"
                         >&rsaquo;</button>
 
                         <div class="relative max-h-[85vh] max-w-5xl">
@@ -129,7 +130,7 @@
                             <div class="mt-4 flex items-center justify-center gap-3">
                                 <a
                                     :href="photos[current]?.download_url"
-                                    :download="photos[current]?.download_name"
+                                    :download="photos[current]?.filename"
                                     class="inline-flex items-center gap-2 rounded-xl bg-white/95 px-4 py-2.5 text-sm font-medium text-sharm-deep shadow-sm transition hover:bg-white"
                                 >
                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
@@ -158,7 +159,7 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('my-photos.lookup', ['locale' => current_locale() === config('locales.default') ? null : current_locale()]) }}" class="mt-5 space-y-4">
+                    <form method="POST" action="{{ localized_url(current_locale(), 'my-photos') }}" class="mt-5 space-y-4">
                         @csrf
 
                         <div>
@@ -167,7 +168,7 @@
                                 type="text"
                                 id="booking_number"
                                 name="booking_number"
-                                value="{{ old('booking_number') }}"
+                                value="{{ is_string(old('booking_number')) ? old('booking_number') : '' }}"
                                 placeholder="SH-XXXXXX"
                                 autocomplete="off"
                                 required
@@ -207,19 +208,21 @@
             lightbox: false,
             current: 0,
             photos: {{ Illuminate\Support\Js::from($photos->map(fn ($p) => [
-                'src' => $p->download_url,
+                'src' => $p->preview_url,
                 'alt' => $booking->name . ' — ' . config('app.name'),
                 'download_url' => $p->download_url,
-                'download_name' => $p->original_name,
+                'filename' => $p->filename,
             ])) }},
             downloading: false,
             downloadLabel: '',
-            downloadAllUrl: @json(route('my-photos.download-all', ['locale' => current_locale() === config('locales.default') ? null : current_locale()])),
+            downloadAllUrl: @json(localized_url(current_locale(), 'my-photos/download-all')),
             bookingNumber: @json($booking->booking_number),
             deliveryCode: @json($booking->delivery_code),
             csrf: document.querySelector('meta[name="csrf-token"]').content,
             preparingLabel: @json(__('site.my_photos.download_preparing')),
             doneLabel: @json(__('site.my_photos.download_done')),
+            failedLabel: @json(__('site.my_photos.download_failed')),
+            networkLabel: @json(__('site.my_photos.network_error')),
 
             open(index) {
                 this.current = index
@@ -255,8 +258,8 @@
                         }),
                     })
                     if (!res.ok) {
-                        const data = await res.json().catch(() => ({}))
-                        window.showToast('error', data.message || 'Download failed.')
+                        const data = await window.readJsonResponse(res, this.failedLabel)
+                        window.toastFromResponse(data, this.failedLabel)
                         return
                     }
                     const blob = await res.blob()
@@ -271,7 +274,7 @@
                     this.downloadLabel = this.doneLabel
                     setTimeout(() => { this.downloading = false }, 2000)
                 } catch (e) {
-                    window.showToast('error', 'Network error. Please try again.')
+                    window.showToast('error', this.networkLabel)
                 } finally {
                     if (this.downloading && this.downloadLabel !== this.doneLabel) {
                         this.downloading = false
@@ -281,5 +284,14 @@
         }
     }
 </script>
+@endif
+@if ($errors->any() || session('lookup_error'))
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                window.showToast('error', @js($errors->first() ?: session('lookup_error')))
+            })
+        </script>
+    @endpush
 @endif
 @endsection

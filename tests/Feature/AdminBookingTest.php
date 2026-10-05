@@ -155,6 +155,19 @@ class AdminBookingTest extends TestCase
         $this->assertSame(1, Booking::count());
     }
 
+    public function test_array_contact_inputs_are_validation_errors(): void
+    {
+        $this->actingAs($this->admin, 'admin')->postJson(route('admin.bookings.store'), $this->validPayload([
+            'country_code' => ['bad'], 'phone' => ['bad'], 'notes' => ['bad'],
+        ]))->assertStatus(422)->assertJsonValidationErrors(['country_code', 'phone', 'notes']);
+    }
+
+    public function test_zero_note_is_not_silently_cleared(): void
+    {
+        $this->actingAs($this->admin, 'admin')->postJson(route('admin.bookings.store'), $this->validPayload(['notes' => '0']))
+            ->assertOk()->assertJsonPath('booking.notes', '0');
+    }
+
     public function test_notes_are_persisted_and_returned_in_the_response(): void
     {
         $booking = Booking::create($this->validPayload([

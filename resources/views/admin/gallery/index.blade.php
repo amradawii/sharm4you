@@ -153,7 +153,7 @@
         >
             <h2 class="text-lg font-semibold text-sharm-deep" x-text="editingAlbum ? 'Edit Album' : 'Create Album'"></h2>
 
-            <form @submit.prevent="submitModal()" class="mt-5 space-y-4">
+            <form @submit.prevent="submitModal()" novalidate class="mt-5 space-y-4">
                 <div>
                     <label class="admin-label">Name — English <span class="text-red-400">*</span></label>
                     <input
@@ -334,9 +334,29 @@ function albumManager() {
             this.errors = {}
         },
 
-        async submitModal() {
-            this.submitting = true
+        validateForm() {
             this.errors = {}
+            const labels = { name_en: 'English', name_ru: 'Russian', name_it: 'Italian', name_ro: 'Romanian', name_bg: 'Bulgarian', name_tr: 'Turkish' }
+            for (const [field, label] of Object.entries(labels)) {
+                const name = String(this.form[field] || '').trim()
+                if (!name) {
+                    this.errors[field] = [label + ' name is required.']
+                } else if (Array.from(name).length > 255) {
+                    this.errors[field] = [label + ' name must not exceed 255 characters.']
+                } else if (!/^[\p{L}\p{M}\p{N}\p{Zs}.,'’‘&()–-]+$/u.test(name) || !/[\p{L}\p{N}]/u.test(name)) {
+                    this.errors[field] = ['Album names must contain letters or numbers and may use spaces and normal punctuation, not slashes or special symbols.']
+                }
+            }
+            return Object.keys(this.errors).length === 0
+        },
+
+        async submitModal() {
+            if (this.submitting) return
+            if (!this.validateForm()) {
+                window.toastFromResponse({ errors: this.errors })
+                return
+            }
+            this.submitting = true
 
             const url = this.editingAlbum
                 ? `{{ url('admin/gallery') }}/${this.editingAlbum.id}`
@@ -355,7 +375,7 @@ function albumManager() {
                     body: JSON.stringify(this.form),
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
 
                 if (!res.ok) {
                     if (data.errors) {
@@ -369,13 +389,7 @@ function albumManager() {
                     // Update in list
                     const idx = this.albums.findIndex(a => a.id === this.editingAlbum.id)
                     if (idx !== -1) {
-                        this.albums[idx].name_en = data.album.name_en
-                        this.albums[idx].name_ru = data.album.name_ru
-                        this.albums[idx].name_it = data.album.name_it
-                        this.albums[idx].name_ro = data.album.name_ro
-                        this.albums[idx].name_bg = data.album.name_bg
-                        this.albums[idx].name_tr = data.album.name_tr
-                        this.albums[idx].slug = data.album.slug
+                        Object.assign(this.albums[idx], data.album)
                     }
                 } else {
                     // Prepend to list
@@ -401,7 +415,7 @@ function albumManager() {
                     },
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
 
                 if (res.ok) {
                     album.is_active = data.is_active
@@ -431,7 +445,7 @@ function albumManager() {
                     },
                 })
 
-                const data = await res.json()
+                const data = await window.readJsonResponse(res)
 
                 if (res.ok) {
                     this.albums = this.albums.filter(a => a.id !== this.deleteTarget.id)

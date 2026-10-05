@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\PrivatePhotoHeaders;
+use App\Http\Middleware\SetAdminLocale;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,8 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'locale'     => \App\Http\Middleware\SetLocale::class,
-            'auth.admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'locale' => SetLocale::class,
+            'auth.admin' => AdminMiddleware::class,
+            'admin.locale' => SetAdminLocale::class,
+            'private.photos' => PrivatePhotoHeaders::class,
         ]);
 
         $middleware->redirectUsersTo(function (Request $request) {
@@ -33,4 +39,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
+        $exceptions->dontFlash(['delivery_code']);
+        $exceptions->respond(function ($response, $exception, Request $request) {
+            return $request->is('my-photos', 'my-photos/*', '*/my-photos', '*/my-photos/*')
+                ? PrivatePhotoHeaders::protect($response) : $response;
+        });
     })->create();

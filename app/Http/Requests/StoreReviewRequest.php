@@ -25,8 +25,11 @@ class StoreReviewRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $code = strtoupper((string) $this->input('country_code'));
-        $country = config("countries.list.{$code}");
+        if (! is_string($this->input('country_code'))) {
+            return;
+        }
+        $code = strtoupper($this->input('country_code'));
+        $country = strlen($code) === 2 ? config("countries.list.{$code}") : null;
 
         if ($country) {
             $this->merge([

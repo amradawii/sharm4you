@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\SafeImage;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UploadBookingPhotoRequest extends FormRequest
@@ -19,8 +20,17 @@ class UploadBookingPhotoRequest extends FormRequest
         // One file per request — the admin UI uploads sequentially so shared
         // hosting never has to handle a large multi-file POST.
         return [
-            'photo' => ['required', 'file', 'mimes:jpeg,jpg,png,webp', 'max:'.self::MAX_KB],
+            'photo' => ['required', 'file', 'mimes:jpeg,jpg,png,webp', 'max:'.config('photo_delivery.max_upload_kb', self::MAX_KB), new SafeImage],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if ($this->route('booking')->photos()->count() >= config('photo_delivery.max_per_booking')) {
+                $validator->errors()->add('photo', 'This booking already has the maximum of '.config('photo_delivery.max_per_booking').' photos.');
+            }
+        });
     }
 
     public function messages(): array

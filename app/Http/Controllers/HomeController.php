@@ -12,7 +12,7 @@ class HomeController extends Controller
     public function home(): View
     {
         $featuredPhotos = Photo::with('album')
-            ->featured()
+            ->publicFeatured()
             ->ordered()
             ->limit(12)
             ->get();

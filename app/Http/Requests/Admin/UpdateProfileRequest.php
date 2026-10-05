@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\SafeImage;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,6 +11,13 @@ class UpdateProfileRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('username'))) {
+            $this->merge(['username' => strtolower(trim($this->input('username')))]);
+        }
     }
 
     public function rules(): array
@@ -32,7 +40,7 @@ class UpdateProfileRequest extends FormRequest
                 'max:255',
                 Rule::unique('admins', 'email')->ignore($adminId),
             ],
-            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048', new SafeImage],
         ];
     }
 

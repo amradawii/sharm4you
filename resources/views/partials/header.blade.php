@@ -58,13 +58,13 @@
                     >{{ $item['label'] }}</a>
                 @endforeach
 
-                <button
-                    type="button"
+                <a
+                    href="{{ $servicesUrl }}#book-session"
                     class="btn-primary header-book-btn"
-                    @click="$dispatch('open-booking-modal')"
+                    @if ($packages->isNotEmpty()) @click.prevent="$dispatch('open-booking-modal')" @endif
                 >
                     {{ __('site.nav.book') }}
-                </button>
+                </a>
 
                 @include('partials.lang-switcher')
             </nav>
@@ -101,11 +101,11 @@
                     >{{ $item['label'] }}</a>
                 @endforeach
 
-                <button
-                    type="button"
-                    @click="mobileOpen = false; $dispatch('open-booking-modal')"
+                <a
+                    href="{{ $servicesUrl }}#book-session"
+                    @if ($packages->isNotEmpty()) @click.prevent="mobileOpen = false; $dispatch('open-booking-modal')" @else @click="mobileOpen = false" @endif
                     class="btn-primary mt-2 w-full text-center"
-                >{{ __('site.nav.book') }}</button>
+                >{{ __('site.nav.book') }}</a>
             </nav>
         </div>
     </div>

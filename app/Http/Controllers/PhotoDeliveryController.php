@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LookupPhotosRequest;
 use App\Models\Booking;
+use App\Support\DeliveryArchive;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use ZipArchive;
 
 class PhotoDeliveryController extends Controller
 {
@@ -48,7 +47,7 @@ class PhotoDeliveryController extends Controller
      * The temp file is deleted automatically after the response finishes
      * sending — no cron, no persistence, nothing left on the shared host.
      */
-    public function downloadAll(Request $request): BinaryFileResponse|JsonResponse
+    public function downloadAll(LookupPhotosRequest $request, DeliveryArchive $archive): BinaryFileResponse|JsonResponse
     {
         $booking = $this->resolveBooking($request);
 
@@ -68,34 +67,17 @@ class PhotoDeliveryController extends Controller
             ], 422);
         }
 
-        // 30 sequential R2 fetches can exceed PHP's default 30s timeout if R2
+        // 50 sequential R2 fetches can exceed PHP's default 30s timeout if R2
         // is slow. Bump it for this request only — not a queue/job, just a guard.
         set_time_limit(120);
 
-        $zipPath = tempnam(sys_get_temp_dir(), 'sharm4you_');
-        $zipPath .= '.zip';
+        $zipPath = $archive->create($photos);
+        clearstatcache(true, $zipPath);
 
         try {
-            $zip = new ZipArchive;
-            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-                throw new \RuntimeException('Could not create zip archive.');
-            }
-
-            foreach ($photos as $photo) {
-                $content = Storage::disk('r2')->get($photo->r2_key);
-                if ($content === false) {
-                    continue;
-                }
-                $zip->addFromString($photo->original_name, $content);
-            }
-
-            $zip->close();
-
-            return response()
-                ->download($zipPath, $booking->booking_number.'-photos.zip')
-                ->deleteFileAfterSend(true);
+            return response()->download($zipPath, $booking->booking_number.'-photos.zip')->deleteFileAfterSend(true);
         } catch (\Throwable $e) {
-            if (file_exists($zipPath)) {
+            if (is_file($zipPath)) {
                 @unlink($zipPath);
             }
             throw $e;
@@ -108,8 +90,12 @@ class PhotoDeliveryController extends Controller
      */
     private function resolveBooking(Request $request): ?Booking
     {
-        $number = strtoupper(trim((string) $request->input('booking_number')));
-        $code = strtoupper(trim((string) $request->input('delivery_code')));
+        if (! is_string($request->input('booking_number')) || ! is_string($request->input('delivery_code'))) {
+            return null;
+        }
+
+        $number = strtoupper(trim($request->input('booking_number')));
+        $code = strtoupper(trim($request->input('delivery_code')));
 
         if (! $number || ! $code) {
             return null;

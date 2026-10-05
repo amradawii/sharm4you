@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use App\Models\Admin;
 
 class AuthController extends Controller
 {
@@ -28,25 +27,29 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+        if (is_string($request->input('username'))) {
+            $request->merge(['username' => strtolower(trim($request->input('username')))]);
+        }
+
         try {
             // Validate credentials
             $credentials = $request->validate([
-                'username' => ['required', 'string', 'min:3', 'regex:/^[a-zA-Z0-9_]+$/'],
-                'password' => ['required', 'string', 'min:6'],
+                'username' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-zA-Z0-9_]+$/'],
+                'password' => ['required', 'string', 'min:6', 'max:255'],
             ], [
-                'username.required' => 'اسم المستخدم مطلوب',
-                'username.min' => 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل',
-                'username.regex' => 'اسم المستخدم يمكن أن يحتوي فقط على حروف وأرقام وشرطة سفلية',
-                'password.required' => 'كلمة المرور مطلوبة',
-                'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+                'username.required' => 'Username is required.',
+                'username.min' => 'Username must be at least 3 characters.',
+                'username.regex' => 'Username may only contain letters, numbers, and underscores.',
+                'password.required' => 'Password is required.',
+                'password.min' => 'Password must be at least 6 characters.',
             ]);
         } catch (ValidationException $e) {
             // Return JSON validation errors for AJAX requests
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'فشل التحقق من البيانات',
-                    'errors' => $e->errors()
+                    'message' => 'Please check your login details.',
+                    'errors' => $e->errors(),
                 ], 422);
             }
             throw $e;
@@ -55,7 +58,7 @@ class AuthController extends Controller
         // Attempt to authenticate
         if (Auth::guard('admin')->attempt([
             'username' => $credentials['username'],
-            'password' => $credentials['password']
+            'password' => $credentials['password'],
         ])) {
             // Regenerate session to prevent fixation attacks
             $request->session()->regenerate();
@@ -66,18 +69,18 @@ class AuthController extends Controller
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'مرحباً بعودتك، ' . $adminName,
-                    'redirect' => route('admin.dashboard')
+                    'message' => 'Welcome back, '.$adminName.'.',
+                    'redirect' => route('admin.dashboard'),
                 ], 200);
             }
 
             // Traditional redirect for non-AJAX requests
             return redirect()->intended(route('admin.dashboard'))
-                ->with('success', 'مرحباً بعودتك، ' . $adminName);
+                ->with('success', 'Welcome back, '.$adminName.'.');
         }
 
         // Authentication failed
-        $errorMessage = 'بيانات الاعتماد المقدمة غير صحيحة.';
+        $errorMessage = 'The provided credentials are incorrect.';
 
         // Return JSON for AJAX requests
         if ($request->wantsJson() || $request->ajax()) {
@@ -85,8 +88,8 @@ class AuthController extends Controller
                 'success' => false,
                 'message' => $errorMessage,
                 'errors' => [
-                    'username' => [$errorMessage]
-                ]
+                    'username' => [$errorMessage],
+                ],
             ], 401);
         }
 

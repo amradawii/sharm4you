@@ -63,6 +63,11 @@ class Photo extends Model
         return $query->where('is_featured', true);
     }
 
+    public function scopePublicFeatured($query)
+    {
+        return $query->featured()->whereHas('album', fn ($album) => $album->active());
+    }
+
     public function scopeOrdered($query)
     {
         return $query->orderBy('sort_order')->orderBy('created_at', 'desc');

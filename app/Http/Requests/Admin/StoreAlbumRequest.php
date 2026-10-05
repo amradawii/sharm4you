@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\AlbumName;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreAlbumRequest extends FormRequest
@@ -14,12 +15,12 @@ class StoreAlbumRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name_en' => ['required', 'string', 'max:255'],
-            'name_ru' => ['required', 'string', 'max:255'],
-            'name_it' => ['required', 'string', 'max:255'],
-            'name_ro' => ['required', 'string', 'max:255'],
-            'name_bg' => ['required', 'string', 'max:255'],
-            'name_tr' => ['required', 'string', 'max:255'],
+            'name_en' => ['required', 'string', 'max:255', new AlbumName],
+            'name_ru' => ['required', 'string', 'max:255', new AlbumName],
+            'name_it' => ['required', 'string', 'max:255', new AlbumName],
+            'name_ro' => ['required', 'string', 'max:255', new AlbumName],
+            'name_bg' => ['required', 'string', 'max:255', new AlbumName],
+            'name_tr' => ['required', 'string', 'max:255', new AlbumName],
         ];
     }
 

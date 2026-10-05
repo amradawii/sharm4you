@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAlbumRequest;
 use App\Http\Requests\Admin\UpdateAlbumRequest;
 use App\Models\Album;
+use App\Support\PhotoStorage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class AlbumController extends Controller
 {
@@ -23,18 +26,18 @@ class AlbumController extends Controller
             ->get();
 
         $albumsJson = $albums->map(fn (Album $album) => [
-            'id'           => $album->id,
-            'name_en'      => $album->name_en,
-            'name_ru'      => $album->name_ru,
-            'name_it'      => $album->name_it,
-            'name_ro'      => $album->name_ro,
-            'name_bg'      => $album->name_bg,
-            'name_tr'      => $album->name_tr,
-            'slug'         => $album->slug,
-            'is_active'    => $album->is_active,
+            'id' => $album->id,
+            'name_en' => $album->name_en,
+            'name_ru' => $album->name_ru,
+            'name_it' => $album->name_it,
+            'name_ro' => $album->name_ro,
+            'name_bg' => $album->name_bg,
+            'name_tr' => $album->name_tr,
+            'slug' => $album->slug,
+            'is_active' => $album->is_active,
             'photos_count' => $album->photos_count,
-            'cover_url'    => $album->cover_url,
-            'edit_url'     => route('admin.gallery.photos', $album),
+            'cover_url' => $album->cover_url,
+            'edit_url' => route('admin.gallery.photos', $album),
         ])->values();
 
         return view('admin.gallery.index', compact('albums', 'albumsJson'));
@@ -45,37 +48,44 @@ class AlbumController extends Controller
      */
     public function store(StoreAlbumRequest $request): JsonResponse
     {
-        $album = Album::create([
-            'name_en'    => $request->input('name_en'),
-            'name_ru'    => $request->input('name_ru'),
-            'name_it'    => $request->input('name_it'),
-            'name_ro'    => $request->input('name_ro'),
-            'name_bg'    => $request->input('name_bg'),
-            'name_tr'    => $request->input('name_tr'),
-            'sort_order' => Album::max('sort_order') + 1,
-        ]);
+        $createdPath = null;
+        try {
+            $album = DB::transaction(function () use ($request, &$createdPath) {
+                $album = Album::create([...$request->validated(), 'sort_order' => Album::max('sort_order') + 1]);
 
-        // Create the storage directory
-        Storage::disk('public')->makeDirectory($album->storagePath());
+                // Create the storage directory
+                $path = $album->storagePath();
+                if (Storage::disk('public')->exists($path)) {
+                    throw ValidationException::withMessages(['name_en' => 'An album folder already exists at this name. Choose a different name or contact the developer.']);
+                }
+                $createdPath = $path;
+                PhotoStorage::makeDirectory('public', $path);
+
+                return $album;
+            });
+        } catch (Throwable $e) {
+            PhotoStorage::cleanup('public', $createdPath, directory: true);
+            throw $e;
+        }
 
         $album->loadCount('photos');
 
         return response()->json([
             'success' => true,
             'message' => 'Album created successfully.',
-            'album'   => [
-                'id'           => $album->id,
-                'name_en'      => $album->name_en,
-                'name_ru'      => $album->name_ru,
-                'name_it'      => $album->name_it,
-                'name_ro'      => $album->name_ro,
-                'name_bg'      => $album->name_bg,
-                'name_tr'      => $album->name_tr,
-                'slug'         => $album->slug,
-                'is_active'    => $album->is_active,
+            'album' => [
+                'id' => $album->id,
+                'name_en' => $album->name_en,
+                'name_ru' => $album->name_ru,
+                'name_it' => $album->name_it,
+                'name_ro' => $album->name_ro,
+                'name_bg' => $album->name_bg,
+                'name_tr' => $album->name_tr,
+                'slug' => $album->slug,
+                'is_active' => $album->is_active,
                 'photos_count' => 0,
-                'cover_url'    => null,
-                'edit_url'     => route('admin.gallery.photos', $album),
+                'cover_url' => null,
+                'edit_url' => route('admin.gallery.photos', $album),
             ],
         ]);
     }
@@ -85,36 +95,49 @@ class AlbumController extends Controller
      */
     public function update(UpdateAlbumRequest $request, Album $album): JsonResponse
     {
-        $oldSlug = $album->slug;
-        $newSlug = Album::generateUniqueSlug($request->input('name_en'), $album->id);
+        $oldPath = $album->storagePath();
+        $newPath = null;
+        $moved = false;
+        try {
+            $album = DB::transaction(function () use ($request, $album, &$oldPath, &$newPath, &$moved) {
+                $album = Album::query()->lockForUpdate()->findOrFail($album->id);
+                $oldPath = $album->storagePath();
+                $newSlug = Album::generateUniqueSlug($request->input('name_en'), $album->id);
+                $album->fill([...$request->validated(), 'slug' => $newSlug]);
+                $newPath = $album->storagePath();
 
-        $album->update([
-            'name_en' => $request->input('name_en'),
-            'name_ru' => $request->input('name_ru'),
-            'name_it' => $request->input('name_it'),
-            'name_ro' => $request->input('name_ro'),
-            'name_bg' => $request->input('name_bg'),
-            'name_tr' => $request->input('name_tr'),
-            'slug'    => $newSlug,
-        ]);
+                // Rename storage directory if slug changed
+                if ($oldPath !== $newPath && Storage::disk('public')->exists($oldPath)) {
+                    if (Storage::disk('public')->exists($newPath)) {
+                        throw ValidationException::withMessages(['name_en' => 'An album folder already exists at this name. Choose a different name or contact the developer.']);
+                    }
+                    PhotoStorage::move('public', $oldPath, $newPath);
+                    $moved = true;
+                }
+                $album->save();
 
-        // Rename storage directory if slug changed
-        if ($oldSlug !== $newSlug && Storage::disk('public')->exists("albums/{$oldSlug}")) {
-            Storage::disk('public')->move("albums/{$oldSlug}", "albums/{$newSlug}");
+                return $album;
+            });
+        } catch (Throwable $e) {
+            if ($moved) {
+                PhotoStorage::restoreMove('public', $newPath, $oldPath);
+            }
+            throw $e;
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Album updated successfully.',
-            'album'   => [
-                'id'      => $album->id,
+            'album' => [
+                'id' => $album->id,
                 'name_en' => $album->name_en,
                 'name_ru' => $album->name_ru,
                 'name_it' => $album->name_it,
                 'name_ro' => $album->name_ro,
                 'name_bg' => $album->name_bg,
                 'name_tr' => $album->name_tr,
-                'slug'    => $album->slug,
+                'slug' => $album->slug,
+                'cover_url' => $album->cover_url,
             ],
         ]);
     }
@@ -127,8 +150,8 @@ class AlbumController extends Controller
         $album->update(['is_active' => ! $album->is_active]);
 
         return response()->json([
-            'success'   => true,
-            'message'   => $album->is_active ? 'Album is now visible.' : 'Album is now hidden.',
+            'success' => true,
+            'message' => $album->is_active ? 'Album is now visible.' : 'Album is now hidden.',
             'is_active' => $album->is_active,
         ]);
     }
@@ -139,7 +162,7 @@ class AlbumController extends Controller
     public function destroy(Album $album): JsonResponse
     {
         // Delete all files from storage
-        Storage::disk('public')->deleteDirectory($album->storagePath());
+        PhotoStorage::delete('public', $album->storagePath(), directory: true);
 
         // Cascade delete handles DB photos
         $album->delete();

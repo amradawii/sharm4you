@@ -1,59 +1,97 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sharm4You
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Multilingual website and admin panel for a tourist photography agency in Sharm El Sheikh, Egypt.
 
-## About Laravel
+**Production:** [https://sharm4you.com](https://sharm4you.com)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Tourists browse the gallery and packages, request a photo session, leave reviews, and later download their private session photos with a booking number and access code. The owner manages everything from an English admin panel.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+> **Private, proprietary project.** Source code © 2026 Amr Adawi. All rights reserved. See [LICENSE.md](LICENSE.md).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Features
 
-## Learning Laravel
+- **Public site in 6 languages:** English (default, no prefix), Russian, Italian, Romanian, Bulgarian and Turkish (`/ru`, `/it`, `/ro`, `/bg`, `/tr`), with per-locale SEO metadata and `hreflang` links.
+- **Packages:** duration tiers priced in USD, EUR and RUB. Each locale shows its own currency. Tiers support discounts, a featured flag and their own time slots.
+- **Booking requests:** an inline form and a popup form. Validation runs in the browser and is repeated on the server. Dates and time slots use Sharm El Sheikh local time (`Africa/Cairo`).
+- **Gallery:** albums with localized names, WebP-converted photos and up to 12 featured photos for the Home and Gallery pages.
+- **Reviews:** tourists submit reviews, which stay hidden until the owner approves them. Up to 12 can be featured on the home page.
+- **Private photo delivery:** photos are stored in a private Cloudflare R2 bucket and accessed through 24-hour presigned links. Tourists can download photos one by one or all at once as a ZIP.
+- **Admin panel:** bookings (tourist requests and ad-hoc bookings recorded by the owner), delivery uploads (50 photos per booking), gallery, packages, reviews and profile.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Tech stack
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Layer | Choice |
+| --- | --- |
+| Backend | Laravel 12, PHP 8.2+ |
+| Database | MySQL / MariaDB |
+| Views | Blade templates with inline Alpine.js components |
+| CSS | Tailwind CSS 3 CLI (no Vite); compiled to `public/css/app.css` |
+| Images | Intervention Image 3 with the GD driver |
+| Photo delivery | Cloudflare R2 (S3-compatible, private bucket) via Flysystem |
+| Tests | PHPUnit 11 on MySQL `sharm4you_test`, plus Node's built-in test runner for the Alpine logic |
 
-## Laravel Sponsors
+There is no SPA, public REST API, queue worker or cron job. Admin and public forms use session-authenticated JSON endpoints protected by CSRF tokens.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Requirements
 
-### Premium Partners
+- PHP 8.2 or newer with the extensions `gd` (JPEG, PNG, WebP and AVIF support), `zip`, `fileinfo`, `mbstring`, `pdo_mysql`, `openssl`, `curl`, `ctype`, `tokenizer`, `xml` and `dom`.
+- Composer 2
+- Node.js 20+ and npm (only for building CSS and running the frontend tests)
+- MySQL 8 or MariaDB 10.6+
+- A Cloudflare R2 bucket and API token (for photo delivery)
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Local setup
 
-## Contributing
+```bash
+git clone <repository-url> sharm4you
+cd sharm4you
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+composer install
+npm ci
 
-## Code of Conduct
+cp .env.example .env          # on Windows: copy .env.example .env
+php artisan key:generate
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Edit `.env` with your local database credentials (`DB_DATABASE=sharm4you`) and, if you want to test delivery against a real bucket, your R2 credentials. Then:
 
-## Security Vulnerabilities
+```bash
+php artisan migrate
+php artisan db:seed --class=PackageSeeder   # optional: the three standard package tiers
+php artisan storage:link
+npm run build
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Create the first admin account as described in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#7-create-the-admin-account). There is no public registration and there are no default credentials.
 
-## License
+> `php artisan db:seed` (without `--class`) also creates a demo web user and demo reviews. Use it only in local development, never in production.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Everyday commands
+
+| Command | Purpose |
+| --- | --- |
+| `composer dev` | Runs `php artisan serve` and the Tailwind watcher together |
+| `npm run dev` | Tailwind watcher only |
+| `npm run build` | Minified production CSS in `public/css/app.css` (commit it) |
+| `composer test` | PHPUnit suite (guarded so it only runs on `sharm4you_test`) |
+| `npm test` | Node tests for the inline Alpine components |
+| `php vendor/bin/pint` | Code style (Laravel preset) |
+
+Because Tailwind scans Blade views and PHP models, run `npm run build` after changing classes in either, and commit the rebuilt CSS.
+
+## Documentation
+
+| Document | Contents |
+| --- | --- |
+| [REQUIREMENTS.md](REQUIREMENTS.md) | Requirements specification: actors, features, business rules, limits, acceptance criteria |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Modules, data model, request flows, endpoints, storage and security design |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | cPanel shared-hosting deployment, configuration and smoke tests |
+| [docs/ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md) | Owner's guide to the admin panel |
+| [docs/TESTING.md](docs/TESTING.md) | Test database setup, automated suites and the manual acceptance checklist |
+| [LICENSE.md](LICENSE.md) | Proprietary license |
+
+The `plan docs/` folder contains the historical planning notes written during development. Where they disagree with the documents above, the documents above are authoritative.
+
+## Author
+
+**Amr Adawi** · amr.m.adawi@outlook.com

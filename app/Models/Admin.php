@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Admin extends Authenticatable
@@ -11,6 +12,11 @@ class Admin extends Authenticatable
     protected $hidden = ['password', 'remember_token'];
 
     protected $casts = ['password' => 'hashed'];
+
+    protected function username(): Attribute
+    {
+        return Attribute::make(set: fn (string $value) => strtolower(trim($value)));
+    }
 
     public function getPhotoUrlAttribute(): ?string
     {

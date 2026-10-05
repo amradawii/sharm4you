@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\Package;
+use App\Rules\SafeImage;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -32,16 +33,25 @@ class StorePackageTierRequest extends FormRequest
             'price_eur' => ['required', 'numeric', 'min:0', 'max:99999'],
             'price_rub' => ['required', 'numeric', 'min:0', 'max:99999'],
             'discount_percent' => ['required', 'integer', Rule::in(Package::DISCOUNT_PERCENTAGES)],
-            'hours' => ['required', 'numeric', 'min:0.5', 'max:24'],
+            'hours' => ['required', 'numeric', 'min:0.5', 'max:24', 'multiple_of:0.5'],
             'available_times' => ['required', 'array', 'min:1'],
             'available_times.*' => ['required', 'string', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
-            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp,avif', 'max:5120'],
+            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp,avif', 'max:5120', new SafeImage],
         ];
+    }
+
+    public function messages(): array
+    {
+        return ['hours.multiple_of' => 'Duration must be between 0.5 and 24 hours in 0.5-hour increments.'];
     }
 
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
             if (Package::where('hours', $this->input('hours'))->exists()) {
                 $validator->errors()->add('hours', 'A package with this duration already exists.');
             }

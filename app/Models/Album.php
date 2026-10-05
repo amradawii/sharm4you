@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class Album extends Model
 {
@@ -86,6 +87,14 @@ class Album extends Model
             if (empty($album->slug)) {
                 $album->slug = static::generateUniqueSlug($album->name_en);
             }
+            $album->storagePath();
+        });
+
+        static::updating(function (Album $album) {
+            $album->storagePath();
+        });
+        static::deleting(function (Album $album) {
+            $album->storagePath();
         });
     }
 
@@ -95,6 +104,10 @@ class Album extends Model
     public static function generateUniqueSlug(string $name, ?int $ignoreId = null): string
     {
         $base = Str::slug($name);
+        if (! preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $base)) {
+            $base = 'album';
+        }
+        $base = rtrim(substr($base, 0, 240), '-');
         $slug = $base;
         $counter = 1;
 
@@ -115,6 +128,13 @@ class Album extends Model
      */
     public function storagePath(): string
     {
+        if (! is_string($this->slug) || strlen($this->slug) > 255
+            || ! preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $this->slug)) {
+            throw ValidationException::withMessages([
+                'album' => 'This album has an unsafe storage path. No files were changed; contact the developer to repair it.',
+            ]);
+        }
+
         return "albums/{$this->slug}";
     }
 }

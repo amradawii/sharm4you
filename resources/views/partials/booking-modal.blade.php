@@ -55,7 +55,7 @@
             <p class="mt-1 text-sm text-sharm-mist">{{ __('site.booking.success') }}</p>
         </div>
 
-        <form x-show="!success" @submit.prevent="submit()" class="mt-8 space-y-5">
+        <form x-ref="modalForm" x-show="!success" @submit.prevent="submit()" novalidate class="mt-8 space-y-5">
             @include('partials.booking-fields', [
                 'phoneRef' => 'modalPhoneInput',
                 'nameId' => 'modal-booking-name',
@@ -65,7 +65,7 @@
                 'compactPackages' => true,
             ])
 
-            <button type="submit" class="btn-primary w-full" :disabled="loading || (form.package_id && form.session_date && availableSlots().length === 0)">
+            <button type="submit" class="btn-primary w-full" :disabled="loading">
                 <span x-show="!loading">{{ __('site.booking.submit') }}</span>
                 <span x-show="loading" class="inline-flex items-center gap-2">
                     <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

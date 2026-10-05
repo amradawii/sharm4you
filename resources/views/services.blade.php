@@ -10,8 +10,10 @@
 
 @section('content')
 <div
-    x-data="bookingForm(@js($packagesSlots))"
-    @keydown.escape.window="if (modalOpen) closeModal()"
+    @if ($packages->isNotEmpty())
+        x-data="bookingForm(@js($packagesSlots))"
+        @keydown.escape.window="if (modalOpen) closeModal()"
+    @endif
 >
     @include('partials.packages-section')
     @include('partials.book-session')

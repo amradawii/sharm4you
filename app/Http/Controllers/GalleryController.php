@@ -19,7 +19,7 @@ class GalleryController extends Controller
             ->get();
 
         $featuredPhotos = Photo::with('album')
-            ->featured()
+            ->publicFeatured()
             ->ordered()
             ->limit(12)
             ->get();
