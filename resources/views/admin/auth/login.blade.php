@@ -31,11 +31,9 @@
 
             {{-- Logo / Brand --}}
             <div class="mb-8 text-center">
-                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-sharm-sea text-lg font-bold text-white">S</div>
-                <span class="text-2xl font-bold tracking-tight text-sharm-deep">
-                    {{ config('app.name') }}
-                </span>
-                <p class="mt-1.5 text-xs font-medium tracking-widest text-sharm-mist uppercase">Admin Panel</p>
+                <div class="mx-auto flex h-32 w-32 items-center justify-center overflow-hidden rounded-xl bg-sharm-sand/80 [&_img]:h-full [&_img]:w-full">
+                    @include('partials.site-logo', ['size' => 'admin'])
+                </div>
             </div>
 
             {{-- Card --}}
@@ -184,8 +182,6 @@
 
         </div>
     </div>
-
-    @include('partials.whatsapp-float')
 
     <x-toast />
 </body>

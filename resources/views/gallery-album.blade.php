@@ -17,7 +17,7 @@
 
 @section('content')
     <section
-        class="section-padding bg-sharm-sand"
+        class="section-padding !pt-6 sm:!pt-8 lg:!pt-10 bg-sharm-sand"
         x-data="{
             lightbox: false,
             current: 0,
@@ -138,7 +138,6 @@
                     :alt="photos[current]?.alt"
                     class="max-h-[85vh] w-auto max-w-full object-contain"
                 >
-                <p class="mt-3 text-center text-sm text-white/70" x-text="photos[current]?.alt"></p>
             </div>
         </div>
     </section>

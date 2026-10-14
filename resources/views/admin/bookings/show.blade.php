@@ -23,7 +23,7 @@
         Back to Bookings
     </a>
 
-    <div class="mt-5 grid gap-6 lg:grid-cols-3">
+    <div class="mt-5 grid gap-6 lg:grid-cols-4">
         {{-- Left: booking info --}}
         <div class="admin-card p-5 lg:col-span-1">
             <div class="flex items-center justify-between">
@@ -88,7 +88,7 @@
         </div>
 
         {{-- Right: delivery --}}
-        <div class="space-y-6 lg:col-span-2">
+        <div class="space-y-6 lg:col-span-3">
             {{-- Upload panel --}}
             <div class="admin-card p-5">
                 <h2 class="text-sm font-semibold text-sharm-deep">Upload photos for the customer</h2>

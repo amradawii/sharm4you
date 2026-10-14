@@ -5,17 +5,11 @@
 @section('robots', 'noindex, nofollow')
 
 @section('content')
-@include('partials.page-banner', [
-    'label' => __('site.my_photos.label'),
-    'title' => __('site.my_photos.title'),
-    'subtitle' => __('site.my_photos.subtitle'),
-])
-
 <section class="section-padding bg-sharm-sand">
     <div class="container-site px-4 sm:px-6 lg:px-8">
         @if ($submitted && $booking)
             {{-- Delivered photos --}}
-            <div class="mx-auto max-w-5xl">
+            <div class="mx-auto w-full">
                 <div
                     class="rounded-2xl border border-sharm-deep/10 bg-white p-6 shadow-soft sm:p-8"
                     x-data="myPhotosPage()"
@@ -65,7 +59,7 @@
 
                     <p class="mt-4 text-xs text-sharm-mist">{{ __('site.my_photos.download_hint') }}</p>
 
-                    <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                    <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7">
                         @foreach ($photos as $index => $photo)
                             <button
                                 type="button"
@@ -203,6 +197,65 @@
 
 @if ($submitted && $booking)
 <script>
+    // Builds an uncompressed (STORE) ZIP Blob in the browser. JPEG/WebP data
+    // doesn't shrink further, so skipping compression keeps it fast on phones.
+    window.storeZip = function (files) {
+        const table = window.storeZip.table || (window.storeZip.table = Array.from({ length: 256 }, (_, n) => {
+            for (let k = 0; k < 8; k++) n = n & 1 ? 0xEDB88320 ^ (n >>> 1) : n >>> 1
+            return n >>> 0
+        }))
+        const crc32 = (data) => {
+            let c = 0xFFFFFFFF
+            for (let i = 0; i < data.length; i++) c = table[(c ^ data[i]) & 0xFF] ^ (c >>> 8)
+            return (c ^ 0xFFFFFFFF) >>> 0
+        }
+        const now = new Date()
+        const time = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)
+        const date = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()
+        const encoder = new TextEncoder()
+        const parts = []
+        const central = []
+        let offset = 0
+        for (const file of files) {
+            const name = encoder.encode(file.name)
+            const crc = crc32(file.data)
+            const size = file.data.length
+            const local = new DataView(new ArrayBuffer(30))
+            local.setUint32(0, 0x04034b50, true)
+            local.setUint16(4, 20, true)
+            local.setUint16(6, 0x0800, true)
+            local.setUint16(10, time, true)
+            local.setUint16(12, date, true)
+            local.setUint32(14, crc, true)
+            local.setUint32(18, size, true)
+            local.setUint32(22, size, true)
+            local.setUint16(26, name.length, true)
+            parts.push(local, name, file.data)
+            const entry = new DataView(new ArrayBuffer(46))
+            entry.setUint32(0, 0x02014b50, true)
+            entry.setUint16(4, 20, true)
+            entry.setUint16(6, 20, true)
+            entry.setUint16(8, 0x0800, true)
+            entry.setUint16(12, time, true)
+            entry.setUint16(14, date, true)
+            entry.setUint32(16, crc, true)
+            entry.setUint32(20, size, true)
+            entry.setUint32(24, size, true)
+            entry.setUint16(28, name.length, true)
+            entry.setUint32(42, offset, true)
+            central.push(entry, name)
+            offset += 30 + name.length + size
+        }
+        const centralSize = central.reduce((sum, part) => sum + part.byteLength, 0)
+        const end = new DataView(new ArrayBuffer(22))
+        end.setUint32(0, 0x06054b50, true)
+        end.setUint16(8, files.length, true)
+        end.setUint16(10, files.length, true)
+        end.setUint32(12, centralSize, true)
+        end.setUint32(16, offset, true)
+        return new Blob([...parts, ...central, end], { type: 'application/zip' })
+    }
+
     window.myPhotosPage = function () {
         return {
             lightbox: false,
@@ -215,14 +268,11 @@
             ])) }},
             downloading: false,
             downloadLabel: '',
-            downloadAllUrl: @json(localized_url(current_locale(), 'my-photos/download-all')),
             bookingNumber: @json($booking->booking_number),
-            deliveryCode: @json($booking->delivery_code),
-            csrf: document.querySelector('meta[name="csrf-token"]').content,
+            progressLabel: @json(__('site.my_photos.download_progress')),
             preparingLabel: @json(__('site.my_photos.download_preparing')),
             doneLabel: @json(__('site.my_photos.download_done')),
-            failedLabel: @json(__('site.my_photos.download_failed')),
-            networkLabel: @json(__('site.my_photos.network_error')),
+            failedLabel: @json(__('site.my_photos.zip_failed')),
 
             open(index) {
                 this.current = index
@@ -240,45 +290,51 @@
                 this.current = (this.current + 1) % this.photos.length
             },
 
+            // Photos are fetched straight from R2 (presigned URLs) and zipped in
+            // the browser, so the shared host never touches the photo bytes.
             async downloadAll() {
                 if (this.downloading) return
                 this.downloading = true
-                this.downloadLabel = this.preparingLabel
-                try {
-                    const res = await fetch(this.downloadAllUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': this.csrf,
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            booking_number: this.bookingNumber,
-                            delivery_code: this.deliveryCode,
-                        }),
-                    })
-                    if (!res.ok) {
-                        const data = await window.readJsonResponse(res, this.failedLabel)
-                        window.toastFromResponse(data, this.failedLabel)
-                        return
+                const total = this.photos.length
+                const width = Math.max(2, String(total).length)
+                const files = new Array(total)
+                let done = 0
+                let next = 0
+                const progress = () => {
+                    this.downloadLabel = this.progressLabel.replace(':percent', Math.floor(done / total * 100))
+                }
+                const worker = async () => {
+                    while (next < total) {
+                        const index = next++
+                        const photo = this.photos[index]
+                        const res = await fetch(photo.download_url)
+                        if (!res.ok) throw new Error('HTTP ' + res.status)
+                        files[index] = {
+                            name: String(index + 1).padStart(width, '0') + '-' + photo.filename,
+                            data: new Uint8Array(await res.arrayBuffer()),
+                        }
+                        done++
+                        progress()
                     }
-                    const blob = await res.blob()
-                    const url = URL.createObjectURL(blob)
+                }
+                try {
+                    progress()
+                    await Promise.all(Array.from({ length: Math.min(4, total) }, worker))
+                    this.downloadLabel = this.preparingLabel
+                    const url = URL.createObjectURL(window.storeZip(files))
                     const a = document.createElement('a')
                     a.href = url
                     a.download = this.bookingNumber + '-photos.zip'
                     document.body.appendChild(a)
                     a.click()
                     document.body.removeChild(a)
-                    URL.revokeObjectURL(url)
+                    setTimeout(() => URL.revokeObjectURL(url), 60000)
                     this.downloadLabel = this.doneLabel
                     setTimeout(() => { this.downloading = false }, 2000)
                 } catch (e) {
-                    window.showToast('error', this.networkLabel)
-                } finally {
-                    if (this.downloading && this.downloadLabel !== this.doneLabel) {
-                        this.downloading = false
-                    }
+                    next = total
+                    this.downloading = false
+                    window.showToast('error', this.failedLabel)
                 }
             },
         }

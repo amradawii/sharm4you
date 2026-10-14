@@ -15,8 +15,8 @@ Tourists browse the gallery and packages, request a photo session, leave reviews
 - **Booking requests:** an inline form and a popup form. Validation runs in the browser and is repeated on the server. Dates and time slots use Sharm El Sheikh local time (`Africa/Cairo`).
 - **Gallery:** albums with localized names, WebP-converted photos and up to 12 featured photos for the Home and Gallery pages.
 - **Reviews:** tourists submit reviews, which stay hidden until the owner approves them. Up to 12 can be featured on the home page.
-- **Private photo delivery:** photos are stored in a private Cloudflare R2 bucket and accessed through 24-hour presigned links. Tourists can download photos one by one or all at once as a ZIP.
-- **Admin panel:** bookings (tourist requests and ad-hoc bookings recorded by the owner), delivery uploads (50 photos per booking), gallery, packages, reviews and profile.
+- **Private photo delivery:** photos are stored in a private Cloudflare R2 bucket and accessed through 24-hour presigned links. Tourists can download photos one by one or all at once as a ZIP that is built in their browser (the server never zips).
+- **Admin panel:** bookings (tourist requests and ad-hoc bookings recorded by the owner), delivery uploads (140 photos per booking), gallery, packages, reviews and profile.
 
 ## Tech stack
 

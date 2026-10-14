@@ -127,7 +127,7 @@ class ReviewController extends Controller
             'name' => $review->name,
             'country' => $review->country,
             'country_code' => $review->country_code,
-            'flag' => $review->flag,
+            'flag_code' => $review->flag_code,
             'comment' => $review->comment,
             'status' => $review->status,
             'status_label' => $review->status_label,

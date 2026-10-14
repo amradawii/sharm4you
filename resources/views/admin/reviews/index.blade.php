@@ -42,7 +42,7 @@
             <div class="admin-card flex flex-col p-5" :class="review.status === 'pending' ? 'ring-1 ring-amber-200' : ''">
                 <div class="flex items-start justify-between gap-2">
                     <div class="flex items-center gap-2">
-                        <span class="text-xl leading-none" x-text="review.flag"></span>
+                        <span x-show="review.flag_code" class="fi rounded-sm text-xl" :class="'fi-' + review.flag_code"></span>
                         <div>
                             <p class="font-semibold text-sharm-deep" x-text="review.name"></p>
                             <p class="text-xs text-sharm-mist" x-text="review.country"></p>

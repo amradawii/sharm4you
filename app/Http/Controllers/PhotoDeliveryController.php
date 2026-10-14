@@ -4,10 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LookupPhotosRequest;
 use App\Models\Booking;
-use App\Support\DeliveryArchive;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class PhotoDeliveryController extends Controller
 {
@@ -43,50 +40,7 @@ class PhotoDeliveryController extends Controller
     }
 
     /**
-     * Generate a single zip of all delivery photos and stream it to the user.
-     * The temp file is deleted automatically after the response finishes
-     * sending — no cron, no persistence, nothing left on the shared host.
-     */
-    public function downloadAll(LookupPhotosRequest $request, DeliveryArchive $archive): BinaryFileResponse|JsonResponse
-    {
-        $booking = $this->resolveBooking($request);
-
-        if (! $booking) {
-            return response()->json([
-                'success' => false,
-                'message' => __('site.my_photos.not_found'),
-            ], 422);
-        }
-
-        $photos = $booking->photos()->ordered()->get();
-
-        if ($photos->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => __('site.my_photos.not_found'),
-            ], 422);
-        }
-
-        // 50 sequential R2 fetches can exceed PHP's default 30s timeout if R2
-        // is slow. Bump it for this request only — not a queue/job, just a guard.
-        set_time_limit(120);
-
-        $zipPath = $archive->create($photos);
-        clearstatcache(true, $zipPath);
-
-        try {
-            return response()->download($zipPath, $booking->booking_number.'-photos.zip')->deleteFileAfterSend(true);
-        } catch (\Throwable $e) {
-            if (is_file($zipPath)) {
-                @unlink($zipPath);
-            }
-            throw $e;
-        }
-    }
-
-    /**
      * Resolve and validate a booking from booking_number + delivery_code.
-     * Shared by show() and downloadAll() so the lookup logic never drifts.
      */
     private function resolveBooking(Request $request): ?Booking
     {

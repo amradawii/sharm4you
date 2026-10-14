@@ -27,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
-        foreach (['bookings' => 3, 'reviews' => 3, 'photo-lookup' => 5, 'photo-zip' => 3] as $name => $attempts) {
+        foreach (['bookings' => 3, 'reviews' => 3, 'photo-lookup' => 5] as $name => $attempts) {
             RateLimiter::for($name, fn (Request $request) => Limit::perMinute($attempts)->by($request->ip()));
         }
 

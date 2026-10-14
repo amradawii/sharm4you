@@ -4,8 +4,8 @@
         <cite class="not-italic">
             <span class="block text-sm font-semibold text-sharm-deep">{{ $review->name }}</span>
             <span class="mt-0.5 flex items-center gap-1.5 text-xs text-sharm-mist">
-                @if ($review->flag)
-                    <span class="text-base leading-none">{{ $review->flag }}</span>
+                @if ($review->flag_code)
+                    <span class="fi fi-{{ $review->flag_code }} rounded-sm"></span>
                 @endif
                 <span>{{ $review->country }}</span>
             </span>

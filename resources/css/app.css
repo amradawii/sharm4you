@@ -191,11 +191,15 @@
     }
 
     .package-card-badge {
-        @apply absolute left-4 top-4 rounded-md bg-sharm-deep px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-white shadow-lg;
+        @apply absolute right-4 top-4 rounded-md bg-sharm-deep px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-white shadow-lg;
     }
 
     .package-card-discount-badge {
         @apply absolute right-4 top-4 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-lg;
+    }
+
+    .package-card.featured .package-card-discount-badge {
+        @apply top-14;
     }
 
     .package-card.featured {
@@ -239,11 +243,11 @@
     }
 
     .booking-package-option-name {
-        @apply font-display text-lg text-sharm-deep;
+        @apply font-display text-lg font-bold text-sharm-deep;
     }
 
     .booking-package-option-price {
-        @apply mt-1 text-sm font-medium text-sharm-desert;
+        @apply mt-1 text-sm font-bold text-sharm-desert;
     }
 
     .booking-package-option-compact {
@@ -324,11 +328,11 @@
     }
 
     .site-header {
-        @apply border-b border-sharm-deep/5 bg-sharm-sand/90 backdrop-blur-md transition-all duration-500;
+        @apply border-b border-sharm-deep/15 bg-sharm-sand/90 backdrop-blur-md transition-all duration-500;
     }
 
     .site-header.is-scrolled {
-        @apply border-sharm-deep/10 bg-white/95 shadow-lg shadow-sharm-deep/[0.04] backdrop-blur-xl;
+        @apply border-sharm-deep/15 bg-white/95 shadow-lg shadow-sharm-deep/[0.04] backdrop-blur-xl;
     }
 
     .header-main-row {

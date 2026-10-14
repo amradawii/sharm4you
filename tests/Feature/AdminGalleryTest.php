@@ -105,9 +105,20 @@ class AdminGalleryTest extends TestCase
             ->assertStatus(422)->assertJsonValidationErrors(['photos']);
         $this->postJson('/admin/gallery/'.$album->id.'/photos', ['photos' => [UploadedFile::fake()->create('file.pdf', 1, 'application/pdf')]])
             ->assertStatus(422)->assertJsonValidationErrors(['photos.0']);
-        $this->postJson('/admin/gallery/'.$album->id.'/photos', ['photos' => [UploadedFile::fake()->image('large.jpg')->size(3073)]])
+        $this->postJson('/admin/gallery/'.$album->id.'/photos', ['photos' => [UploadedFile::fake()->image('large.jpg')->size(10241)]])
             ->assertStatus(422)->assertJsonValidationErrors(['photos.0']);
         $this->assertSame(0, $album->photos()->count());
+    }
+
+    public function test_large_camera_photo_is_downscaled_to_webp(): void
+    {
+        $album = Album::create($this->names());
+        $this->postJson('/admin/gallery/'.$album->id.'/photos', ['photos' => [UploadedFile::fake()->image('camera.jpg', 4000, 3000)]])
+            ->assertOk()->assertJsonPath('photos_count', 1);
+        $photo = $album->photos()->firstOrFail();
+        $dimensions = getimagesize(Storage::disk('public')->path($album->storagePath().'/'.$photo->filename));
+        $this->assertSame('image/webp', $dimensions['mime']);
+        $this->assertSame([2560, 1920], [$dimensions[0], $dimensions[1]]);
     }
 
     public function test_album_visibility_and_featured_capacity_can_be_managed(): void

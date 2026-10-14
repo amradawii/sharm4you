@@ -174,7 +174,7 @@
         @click.self="closeFormModal()"
         @keydown.escape.window="closeFormModal()"
     >
-        <div class="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-sharm-deep/10 bg-white p-6 shadow-xl">
+        <div class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-sharm-deep/10 bg-white p-6 shadow-xl">
             <div class="shrink-0">
                 <h2 class="text-lg font-semibold text-sharm-deep" x-text="editingBooking ? 'Edit Booking ' + editingBooking.booking_number : 'New Booking'"></h2>
                 <p class="mt-1 text-xs text-sharm-mist">

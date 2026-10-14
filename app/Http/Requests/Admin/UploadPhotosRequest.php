@@ -16,7 +16,7 @@ class UploadPhotosRequest extends FormRequest
     {
         return [
             'photos' => ['required', 'array', 'min:1', 'max:5'],
-            'photos.*' => ['required', 'file', 'mimes:jpeg,jpg,png,webp,avif', 'max:3072', new SafeImage], // 3 MB
+            'photos.*' => ['required', 'file', 'mimes:jpeg,jpg,png,webp,avif', 'max:10240', new SafeImage], // 10 MB
         ];
     }
 
@@ -26,7 +26,7 @@ class UploadPhotosRequest extends FormRequest
             'photos.required' => 'Please select at least one image.',
             'photos.max' => 'You can upload a maximum of 5 images at a time.',
             'photos.*.mimes' => 'Only JPEG, PNG, WebP, and AVIF images are allowed.',
-            'photos.*.max' => 'Each image must not exceed 3 MB.',
+            'photos.*.max' => 'Each image must not exceed 10 MB.',
             'photos.*.file' => 'Invalid file upload.',
         ];
     }

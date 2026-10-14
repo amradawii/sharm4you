@@ -45,9 +45,9 @@ Open the booking. The right side has **Upload photos for the customer** and the 
 
 ### Upload
 
-- Drag photos onto the upload area or click to choose them: **up to 10 per drop**, each **up to 10 MB**, JPEG, PNG or WebP.
-- Each photo is resized to a maximum of 2560 px on its longest side (enough for screens and normal prints) and stored privately in Cloudflare R2. Nothing is kept on the website server.
-- **Limit: 50 photos per booking.** The uploader shows how many slots are left and stops at 50. This limit keeps storage costs low so the account can stay within (or close to) Cloudflare's free storage for as long as possible. It can be raised later if needed.
+- Drag photos onto the upload area or click to choose them: **up to 10 per drop**, each **up to 13 MB**, JPEG, PNG or WebP.
+- Each photo is resized to a maximum of 2560 px on its longest side (enough for screens and normal prints), converted to WebP at quality 80, and stored privately in Cloudflare R2. Nothing is kept on the website server.
+- **Limit: 140 photos per booking.** The uploader shows how many slots are left and stops at 140. This limit keeps storage costs low so the account can stay within (or close to) Cloudflare's free storage for as long as possible. It can be raised later if needed.
 - If a photo fails, it stays in the queue with the reason, and successful photos leave the queue. After a **network error**, reload the page first to check whether that photo was actually saved, then retry only what's missing.
 - Very large images (above 24 megapixels) are rejected. Export them smaller from your editing software first.
 - Each photo gets a clear filename such as `SH-KFAPH2-20261005-…jpg` (booking number + upload date). The client sees this name when downloading.
@@ -63,7 +63,7 @@ Good to know:
 - The code **does not expire**. The client can come back any time while the photos are stored.
 - Each time the client opens the page, fresh private links are created that work for **24 hours**.
 - **Regenerate** the code if it was sent to the wrong person. The old code stops working immediately, but links that were already opened stay valid for up to 24 hours. That can't be cancelled early.
-- **Download all** works up to about 100 MB of photos. If a delivery is bigger, the client sees a message and can still download each photo individually.
+- **Download all** builds the ZIP in the client's own browser (with a % progress counter), so it works for all 140 photos and puts no load on the hosting. On iPhone the ZIP is saved in the *Files* app; tapping it there extracts the photos.
 
 ### Deleting photos and storage
 
@@ -76,7 +76,7 @@ Good to know:
 
 - **Create album:** give it a name in all six languages. Names may use letters (any language), numbers and normal punctuation like `Beach & Desert` or `Family's Trip`. Names made only of symbols (e.g. `!!!`) are rejected.
 - **Active / inactive:** inactive albums are hidden from the website, and their photos disappear from the featured sections.
-- **Upload photos:** up to 5 at a time, each ≤ 3 MB (JPEG, PNG, WebP or AVIF). They are converted to WebP automatically. The first photo becomes the album cover.
+- **Upload photos:** up to 5 at a time, each ≤ 10 MB (JPEG, PNG, WebP or AVIF). They are converted to WebP automatically, scaled down to at most 2560 px on the long side, and compressed. The first photo becomes the album cover.
 - Add **alt text** (a short description) per language. It helps Google and visually impaired visitors.
 - **Featured** photos (★) appear on the Home and Gallery pages, with a maximum of 12 in total.
 - Remember: the gallery is **public**. Use it only for photos you're allowed to show; client deliveries belong in bookings.
@@ -100,11 +100,11 @@ Good to know:
 
 | What | Limit |
 | --- | --- |
-| Delivery photos per booking | 50 |
+| Delivery photos per booking | 140 |
 | Delivery photos per drop | 10, each ≤ 10 MB |
-| Download all (ZIP) | about 100 MB |
+| Download all (ZIP) | all photos, built in the client's browser |
 | Delivery links | valid 24 h (renewed on every visit) |
-| Gallery upload | 5 photos per upload, each ≤ 3 MB |
+| Gallery upload | 5 photos per upload, each ≤ 10 MB |
 | Featured photos / reviews | 12 / 12 |
 | Image resolution | ≤ 24 megapixels |
 | Tourist booking form | 3 submissions per minute per device |
@@ -116,7 +116,7 @@ Good to know:
 | "Your session expired. Refresh the page and try again." / "Please sign in again" | Refresh the page (sign in if asked) and repeat the action |
 | "Too many attempts" | Wait one minute |
 | "Photo storage is temporarily unavailable" | Cloudflare or the server disk didn't respond. Wait and retry; nothing was half-saved |
-| "This booking already has the maximum of 50 photos" | Delete some photos, or ask the developer to raise the limit |
+| "This booking already has the maximum of 140 photos" | Delete some photos, or ask the developer to raise the limit |
 | "The image resolution is too large" | Export the photo at a smaller size and upload again |
 | Anything else unexpected | Note the time and what you clicked, and contact the developer |
 

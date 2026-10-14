@@ -26,10 +26,10 @@ Verified in cPanel → *Select PHP Version* (PHP 8.2, CloudLinux alt-php):
 | --- | --- | --- | --- |
 | PHP version | 8.2 | ≥ 8.2 | |
 | `memory_limit` | 512M | ≥ 384M | Allows the full 24 MP image limit |
-| `max_execution_time` | 60 | ≥ 60 | Download All raises its own limit to 120 s |
+| `max_execution_time` | 60 | ≥ 60 | |
 | `max_input_time` | 600 | ≥ 60 | |
-| `upload_max_filesize` | 512M | ≥ 16M | App limits are 10 MB per delivery photo and 3 MB per gallery photo |
-| `post_max_size` | 512M | ≥ 20M | Gallery uploads up to 5 × 3 MB in one request |
+| `upload_max_filesize` | 512M | ≥ 16M | App limits are 13 MB per delivery photo and 10 MB per gallery photo |
+| `post_max_size` | 512M | ≥ 55M | Gallery uploads up to 5 × 10 MB in one request |
 | `max_input_vars` | 10000 | ≥ 1000 | |
 | `file_uploads` | On | On | |
 | `display_errors` | Off | **Off** | |
@@ -175,7 +175,21 @@ Directories should be `755` and files `644`. `storage/` and `bootstrap/cache/` m
 ## 9. Cloudflare R2
 
 1. Cloudflare dashboard → R2 → **Create bucket** (e.g. `sharm4you-delivery`).
-2. Bucket → Settings: keep **Public access disabled**. Don't enable the `r2.dev` subdomain and don't connect a custom domain. CORS is not needed.
+2. Bucket → Settings: keep **Public access disabled**. Don't enable the `r2.dev` subdomain and don't connect a custom domain.
+   Add a **CORS policy** so *Download all* can fetch the photos in the browser and zip them there (the presigned links still control who can read each photo):
+
+   ```json
+   [
+     {
+       "AllowedOrigins": ["https://sharm4you.com", "https://www.sharm4you.com"],
+       "AllowedMethods": ["GET"],
+       "AllowedHeaders": [],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
+
+   Add `http://localhost:8000` (or your local URL) as an extra origin to test *Download all* locally.
 3. R2 → *Manage API tokens* → **Create API token**: permission *Object Read & Write*, **limited to this bucket only**. Copy the access key, secret and the S3 endpoint into `.env`.
 4. Don't add lifecycle rules that delete objects. The app deletes objects when the owner deletes photos.
 5. R2 objects are **not** included in cPanel backups. Delivery photos exist only in R2, plus the photographer's own originals. Make sure the photographer keeps the originals until the client has downloaded them.

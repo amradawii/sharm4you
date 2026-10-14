@@ -48,7 +48,7 @@
                 </svg>
             </div>
             <p class="text-sm font-medium text-sharm-deep">Drop images here or click to browse</p>
-            <p class="text-xs text-sharm-mist">JPEG, PNG, WebP, AVIF — Max 3 MB each — Up to 5 at a time</p>
+            <p class="text-xs text-sharm-mist">JPEG, PNG, WebP, AVIF — Max 10 MB each — Up to 5 at a time</p>
         </div>
     </div>
 
@@ -228,11 +228,9 @@
             x-transition:enter-end="opacity-100 scale-100"
             class="w-full max-w-sm rounded-2xl border border-sharm-deep/10 bg-white p-6 shadow-xl"
         >
-            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-50">
-                <svg class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                </svg>
-            </div>
+            <svg class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
             <h3 class="mt-3 text-sm font-semibold text-sharm-deep">Delete Photo</h3>
             <p class="mt-1 text-sm text-sharm-mist">This will permanently delete this photo. This cannot be undone.</p>
             <div class="mt-5 flex items-center justify-end gap-3">
@@ -250,7 +248,7 @@
 function photoManager() {
     const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif']
     const ALLOWED_EXTS  = ['.jpg', '.jpeg', '.png', '.webp', '.avif']
-    const MAX_SIZE      = 3 * 1024 * 1024 // 3 MB
+    const MAX_SIZE      = 10 * 1024 * 1024 // 10 MB
     const MAX_FILES     = 5
 
     return {
@@ -282,7 +280,7 @@ function photoManager() {
                     errors.push(`"${file.name}" — invalid type. Only JPEG, PNG, WebP, AVIF allowed.`)
                 }
                 if (file.size > MAX_SIZE) {
-                    errors.push(`"${file.name}" — exceeds 3 MB limit.`)
+                    errors.push(`"${file.name}" — exceeds 10 MB limit.`)
                 }
             })
 

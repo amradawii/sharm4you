@@ -28,7 +28,7 @@
     >
         @foreach ($packages as $package)
             <label
-                class="booking-package-option {{ $compactPackages ? 'booking-package-option-compact' : '' }}"
+                class="booking-package-option relative {{ $compactPackages ? 'booking-package-option-compact' : '' }} {{ $package->is_discounted ? 'pt-8' : '' }}"
                 :class="{ 'is-selected': String(form.package_id) === '{{ $package->id }}' }"
             >
                 <input
@@ -43,7 +43,7 @@
                     @if ($package->is_discounted)
                         <span class="block text-xs line-through opacity-70">{{ $package->formatted_price }}</span>
                         <span class="block">{{ $package->formatted_discounted_price }}</span>
-                        <span class="mt-1 inline-block rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">-{{ $package->discount_percent }}%</span>
+                        <span class="absolute left-2 top-2 whitespace-nowrap text-[9px] font-semibold text-red-600 sm:left-3 sm:top-3 sm:text-[10px]">-{{ $package->discount_percent }}% OFF</span>
                     @else
                         {{ $package->formatted_price }}
                     @endif
@@ -100,6 +100,10 @@
 </div>
 <p class="mt-1.5 text-xs text-red-500" x-show="errors.session_time" x-text="errors.session_time?.[0]"></p>
 
+@if ($compactPackages)
+<div class="grid gap-5 sm:grid-cols-2">
+@endif
+
 <div>
     <label for="{{ $phoneRef }}-field" class="mb-1.5 block text-sm font-medium text-sharm-deep">{{ __('site.booking.phone') }}</label>
     <input
@@ -126,3 +130,6 @@
     >
     <p class="mt-1 text-xs text-red-500" x-show="errors.email" x-text="errors.email?.[0]"></p>
 </div>
+@if ($compactPackages)
+</div>
+@endif

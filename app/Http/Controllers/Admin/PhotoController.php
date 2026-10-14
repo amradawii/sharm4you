@@ -10,7 +10,6 @@ use App\Support\PhotoStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
@@ -20,6 +19,10 @@ use Throwable;
 
 class PhotoController extends Controller
 {
+    private const MAX_DIMENSION = 2560;
+
+    private const QUALITY = 65;
+
     /**
      * Album detail page (photo management).
      */
@@ -78,7 +81,8 @@ class PhotoController extends Controller
                     } catch (DecoderException $e) {
                         throw ValidationException::withMessages(['photos' => 'An image cannot be decoded. Please re-save it and try again.']);
                     }
-                    $encoded = $image->toWebp(quality: 90);
+                    $image->scaleDown(width: self::MAX_DIMENSION, height: self::MAX_DIMENSION);
+                    $encoded = $image->toWebp(quality: self::QUALITY);
 
                     PhotoStorage::put('public', $storagePath, (string) $encoded);
                     $written[] = $storagePath;

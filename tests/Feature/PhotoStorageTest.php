@@ -68,12 +68,12 @@ class PhotoStorageTest extends TestCase
 
     public function test_delivery_limit_counts_existing_photos_across_batches(): void
     {
-        $this->fillDelivery(49);
+        $this->fillDelivery(139);
         $this->postJson('/admin/bookings/'.$this->booking->id.'/photos', ['photo' => UploadedFile::fake()->image('last.jpg')])->assertOk();
         $this->postJson('/admin/bookings/'.$this->booking->id.'/photos', ['photo' => UploadedFile::fake()->image('extra.jpg')])
             ->assertStatus(422)->assertJsonValidationErrors(['photo']);
-        $this->assertSame(50, $this->booking->photos()->count());
-        $this->assertCount(50, Storage::disk('r2')->allFiles());
+        $this->assertSame(140, $this->booking->photos()->count());
+        $this->assertCount(140, Storage::disk('r2')->allFiles());
     }
 
     public function test_upload_persists_the_final_unique_filename_once(): void
@@ -291,16 +291,16 @@ class PhotoStorageTest extends TestCase
 
     public function test_a_new_photo_after_preflight_is_detected_by_the_locked_capacity_recheck(): void
     {
-        $this->fillDelivery(49);
+        $this->fillDelivery(139);
         $this->app->afterResolving(UploadBookingPhotoRequest::class, function () {
             $key = 'bookings/concurrent.jpg';
             Storage::disk('r2')->put($key, 'fixture');
-            $this->booking->photos()->create(['r2_key' => $key, 'filename' => 'concurrent.jpg', 'size' => 7, 'sort_order' => 50]);
+            $this->booking->photos()->create(['r2_key' => $key, 'filename' => 'concurrent.jpg', 'size' => 7, 'sort_order' => 140]);
         });
         $this->postJson('/admin/bookings/'.$this->booking->id.'/photos', ['photo' => UploadedFile::fake()->image('extra.jpg')])
             ->assertStatus(422)->assertJsonValidationErrors(['photo']);
-        $this->assertSame(50, $this->booking->photos()->count());
-        $this->assertCount(50, Storage::disk('r2')->allFiles());
+        $this->assertSame(140, $this->booking->photos()->count());
+        $this->assertCount(140, Storage::disk('r2')->allFiles());
     }
 
     public function test_pixel_limits_apply_to_gallery_package_and_avatar_uploads(): void

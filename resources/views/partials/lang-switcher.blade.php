@@ -11,7 +11,7 @@
         :aria-expanded="langOpen"
         aria-label="{{ __('site.topbar.language') }}"
     >
-        <span class="text-sm leading-none" aria-hidden="true">{{ $current['flag'] ?? '' }}</span>
+        <span class="fi fi-{{ $current['flag_code'] ?? '' }} rounded-sm" aria-hidden="true"></span>
         @if ($compact)
             <span class="uppercase tracking-wide">{{ current_locale() }}</span>
         @else
@@ -34,7 +34,7 @@
                 class="lang-switcher-option {{ current_locale() === $code ? 'is-active' : '' }}"
                 @click="langOpen = false"
             >
-                <span class="text-base leading-none" aria-hidden="true">{{ $locale['flag'] ?? '' }}</span>
+                <span class="fi fi-{{ $locale['flag_code'] ?? '' }} rounded-sm" aria-hidden="true"></span>
                 <span>{{ $locale['native'] }}</span>
             </a>
         @endforeach

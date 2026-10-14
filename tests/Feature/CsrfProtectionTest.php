@@ -13,7 +13,7 @@ class CsrfProtectionTest extends TestCase
     public function test_public_mutations_reject_missing_csrf_tokens_outside_the_test_bypass(): void
     {
         $this->app->instance('env', 'production');
-        foreach (['/book-session', '/review', '/my-photos', '/ru/my-photos', '/my-photos/download-all'] as $path) {
+        foreach (['/book-session', '/review', '/my-photos', '/ru/my-photos'] as $path) {
             $this->postJson($path, [])->assertStatus(419);
         }
     }

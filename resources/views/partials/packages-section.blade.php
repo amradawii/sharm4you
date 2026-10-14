@@ -1,5 +1,6 @@
+@php($compactTop = $compactTop ?? false)
 @if ($packages->isNotEmpty())
-<section id="packages" class="section-padding bg-white">
+<section id="packages" class="section-padding {{ $compactTop ? '!pt-9 sm:!pt-11 lg:!pt-13' : '' }} bg-white">
     <div class="container-site reveal" x-intersect.once="$el.classList.add('is-visible')">
         <div class="text-center">
             <p class="section-label">{{ __('site.packages.label') }}</p>
@@ -44,14 +45,14 @@
                         @endif
                     </div>
                     <div class="package-card-body">
-                        <h3 class="font-display text-2xl text-sharm-deep">{{ $package->name }}</h3>
+                        <h3 class="font-display text-2xl font-bold text-sharm-deep">{{ $package->name }}</h3>
                         <p class="mt-4 flex-1 text-sm leading-relaxed text-sharm-mist">{{ $package->description }}</p>
                         <div class="mt-6">
                             @if ($package->is_discounted)
                                 <p class="text-sm text-sharm-mist line-through">{{ $package->formatted_price }}</p>
-                                <p class="font-display text-4xl tracking-tight text-sharm-desert">{{ $package->formatted_discounted_price }}</p>
+                                <p class="font-display text-4xl font-bold tracking-tight text-sharm-desert">{{ $package->formatted_discounted_price }}</p>
                             @else
-                                <p class="font-display text-4xl tracking-tight text-sharm-desert">{{ $package->formatted_price }}</p>
+                                <p class="font-display text-4xl font-bold tracking-tight text-sharm-desert">{{ $package->formatted_price }}</p>
                             @endif
                         </div>
                         <button

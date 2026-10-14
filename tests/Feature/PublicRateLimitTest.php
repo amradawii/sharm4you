@@ -17,7 +17,6 @@ class PublicRateLimitTest extends TestCase
         $this->postJson('/book-session', [])->assertStatus(429)->assertHeader('Retry-After');
         $this->postJson('/review', [])->assertStatus(422);
         $this->postJson('/my-photos', [])->assertStatus(422);
-        $this->postJson('/my-photos/download-all', [])->assertStatus(422);
     }
 
     public function test_a_limit_is_shared_across_locales(): void

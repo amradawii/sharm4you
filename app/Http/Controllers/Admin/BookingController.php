@@ -25,8 +25,8 @@ class BookingController extends Controller
     /** Longest edge (px) for delivery photos — whole image scaled, never cropped. */
     private const MAX_DIMENSION = 2560;
 
-    /** JPEG/WebP quality for compressed delivery photos. */
-    private const QUALITY = 85;
+    /** WebP quality for compressed delivery photos. */
+    private const QUALITY = 80;
 
     /** Free-tier ceiling for the storage meter (10 GB in bytes). */
     private const FREE_TIER_BYTES = 10_000_000_000;
@@ -185,18 +185,9 @@ class BookingController extends Controller
         // no upscaling of already-smaller images).
         $image->scaleDown(width: self::MAX_DIMENSION, height: self::MAX_DIMENSION);
 
-        // Keep the original format; just compress.
-        $extension = match ($file->getMimeType()) {
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            default => 'jpg',
-        };
-
-        $encoded = match ($extension) {
-            'png' => $image->toPng(),
-            'webp' => $image->toWebp(quality: self::QUALITY),
-            default => $image->toJpeg(quality: self::QUALITY),
-        };
+        // Always store as WebP: smaller delivery files at the same visual quality.
+        $extension = 'webp';
+        $encoded = $image->toWebp(quality: self::QUALITY);
 
         $binary = (string) $encoded;
         $uuid = Str::uuid()->toString();

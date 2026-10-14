@@ -7,8 +7,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UploadBookingPhotoRequest extends FormRequest
 {
-    /** Max upload size per photo, in kilobytes (10 MB). */
-    public const MAX_KB = 10240;
+    /** Max upload size per photo, in kilobytes (13 MB). */
+    public const MAX_KB = 13312;
 
     public function authorize(): bool
     {
@@ -38,7 +38,7 @@ class UploadBookingPhotoRequest extends FormRequest
         return [
             'photo.required' => 'No image was received.',
             'photo.mimes' => 'Only JPEG, PNG, and WebP images are allowed.',
-            'photo.max' => 'Each image must not exceed 10 MB.',
+            'photo.max' => 'Each image must not exceed 13 MB.',
             'photo.file' => 'Invalid file upload.',
         ];
     }

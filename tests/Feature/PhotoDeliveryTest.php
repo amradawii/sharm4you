@@ -6,7 +6,6 @@ use App\Models\Admin;
 use App\Models\Booking;
 use App\Models\BookingPhoto;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -24,8 +23,6 @@ class PhotoDeliveryTest extends TestCase
 
         // Fake the R2 disk so we never hit real Cloudflare storage in tests.
         Storage::fake('r2');
-        Storage::disk('public')->makeDirectory('zip-scratch');
-        config(['photo_delivery.temp_directory' => Storage::disk('public')->path('zip-scratch')]);
 
         $this->booking = Booking::create([
             'name' => 'Test Tourist',
@@ -99,12 +96,6 @@ class PhotoDeliveryTest extends TestCase
             ->assertStatus(422)->assertJsonValidationErrors(['booking_number', 'delivery_code']);
     }
 
-    public function test_array_zip_fields_do_not_raise_an_exception(): void
-    {
-        $this->postJson(route('my-photos.download-all'), ['booking_number' => ['bad'], 'delivery_code' => ['bad']])
-            ->assertStatus(422)->assertJsonValidationErrors(['booking_number', 'delivery_code']);
-    }
-
     public function test_lookup_is_case_insensitive(): void
     {
         $this->post(route('my-photos.lookup'), [
@@ -113,67 +104,6 @@ class PhotoDeliveryTest extends TestCase
         ])
             ->assertOk()
             ->assertSee($this->booking->name);
-    }
-
-    public function test_download_all_with_valid_credentials_returns_zip(): void
-    {
-        $response = $this->postJson(route('my-photos.download-all'), [
-            'booking_number' => $this->booking->booking_number,
-            'delivery_code' => 'ABC123',
-        ]);
-
-        $response->assertOk();
-        $this->assertStringContainsString($this->booking->booking_number.'-photos.zip', $response->headers->get('Content-Disposition'));
-        $this->assertFileExists($response->getFile()->getPathname());
-        $this->sendZip($response);
-    }
-
-    private function sendZip($response): void
-    {
-        $path = $response->getFile()->getPathname();
-        $response->baseResponse->prepare(Request::create('/my-photos/download-all', 'POST'));
-        ob_start();
-        $response->sendContent();
-        $content = ob_get_clean();
-        $this->assertGreaterThan(0, strlen($content));
-        $this->assertFileDoesNotExist($path);
-        $this->assertSame([], Storage::disk('public')->allFiles('zip-scratch'));
-    }
-
-    public function test_duplicate_names_keep_every_photo_in_the_zip(): void
-    {
-        BookingPhoto::query()->update(['filename' => 'same.jpg']);
-        $response = $this->postJson('/my-photos/download-all', ['booking_number' => $this->booking->booking_number, 'delivery_code' => 'ABC123'])->assertOk();
-        $zip = new \ZipArchive;
-        $zip->open($response->getFile()->getPathname());
-        $this->assertSame(2, $zip->numFiles);
-        $this->assertNotSame($zip->getNameIndex(0), $zip->getNameIndex(1));
-        $photos = BookingPhoto::orderBy('sort_order')->get();
-        $this->assertSame('01-'.$photos[0]->filename, $zip->getNameIndex(0));
-        $this->assertSame('02-'.$photos[1]->filename, $zip->getNameIndex(1));
-        $this->assertSame('fake-image-1', $zip->getFromIndex(0));
-        $this->assertSame('fake-image-2', $zip->getFromIndex(1));
-        $this->assertSame(\ZipArchive::CM_STORE, $zip->statIndex(0)['comp_method']);
-        $this->assertSame(\ZipArchive::CM_STORE, $zip->statIndex(1)['comp_method']);
-        $zip->close();
-        $this->sendZip($response);
-    }
-
-    public function test_zip_byte_budget_uses_metadata_and_real_stream_bytes(): void
-    {
-        config(['photo_delivery.zip_max_bytes' => 10]);
-        $this->postJson('/my-photos/download-all', ['booking_number' => $this->booking->booking_number, 'delivery_code' => 'ABC123'])->assertStatus(422);
-        $this->assertSame([], Storage::disk('public')->allFiles('zip-scratch'));
-        BookingPhoto::query()->update(['size' => 0]);
-        $this->postJson('/my-photos/download-all', ['booking_number' => $this->booking->booking_number, 'delivery_code' => 'ABC123'])->assertStatus(422);
-        $this->assertSame([], Storage::disk('public')->allFiles('zip-scratch'));
-    }
-
-    public function test_missing_r2_object_does_not_return_an_incomplete_zip(): void
-    {
-        Storage::disk('r2')->delete('bookings/test-2.jpg');
-        $this->postJson('/my-photos/download-all', ['booking_number' => $this->booking->booking_number, 'delivery_code' => 'ABC123'])->assertStatus(503);
-        $this->assertSame([], Storage::disk('public')->allFiles('zip-scratch'));
     }
 
     public function test_delivery_pages_and_errors_are_not_cached_or_indexed(): void
@@ -193,11 +123,21 @@ class PhotoDeliveryTest extends TestCase
         $this->get('/my-photos')->assertOk();
     }
 
-    public function test_localized_lookup_and_zip_urls_keep_the_locale_prefix(): void
+    public function test_localized_lookup_url_keeps_the_locale_prefix(): void
     {
         $this->get('/ru/my-photos')->assertOk()->assertSee('action="'.url('/ru/my-photos').'"', false);
-        $this->post('/ru/my-photos', ['booking_number' => $this->booking->booking_number, 'delivery_code' => 'ABC123'])->assertOk()
-            ->assertSee(str_replace('/', '\\/', url('/ru/my-photos/download-all')), false);
+        $this->post('/ru/my-photos', ['booking_number' => $this->booking->booking_number, 'delivery_code' => 'ABC123'])->assertOk();
+    }
+
+    public function test_download_all_is_built_in_the_browser_from_presigned_urls(): void
+    {
+        Storage::disk('r2')->buildTemporaryUrlsUsing(fn ($path, $expiration, $options) => url('/fake-r2/'.$path).'?'.http_build_query($options));
+        $this->post('/my-photos', ['booking_number' => $this->booking->booking_number, 'delivery_code' => 'ABC123'])->assertOk()
+            ->assertSee('window.storeZip', false)
+            ->assertSee('ResponseContentDisposition=attachment%3B+filename%3Dsunset.jpg', false)
+            ->assertDontSee('ABC123', false);
+        $this->postJson('/my-photos/download-all', ['booking_number' => $this->booking->booking_number, 'delivery_code' => 'ABC123'])
+            ->assertNotFound();
     }
 
     public function test_preview_and_attachment_urls_have_distinct_signed_options(): void
@@ -227,16 +167,14 @@ class PhotoDeliveryTest extends TestCase
         $photo->update(['filename' => "../Photo\r\n.jpg"]);
     }
 
-    public function test_existing_oversized_delivery_remains_viewable_but_zip_is_bounded(): void
+    public function test_existing_oversized_delivery_remains_viewable(): void
     {
-        for ($i = 2; $i < 51; $i++) {
+        for ($i = 2; $i < 141; $i++) {
             $this->booking->photos()->create(['r2_key' => 'bookings/legacy-'.$i.'.jpg', 'filename' => 'legacy.jpg', 'size' => 0, 'sort_order' => $i]);
         }
         $credentials = ['booking_number' => $this->booking->booking_number, 'delivery_code' => 'ABC123'];
-        $this->post('/my-photos', $credentials)->assertOk()->assertViewHas('photos', fn ($photos) => $photos->count() === 51);
-        $this->postJson('/my-photos/download-all', $credentials)->assertStatus(422);
-        $this->assertSame(51, $this->booking->photos()->count());
-        $this->assertSame([], Storage::disk('public')->allFiles('zip-scratch'));
+        $this->post('/my-photos', $credentials)->assertOk()->assertViewHas('photos', fn ($photos) => $photos->count() === 141);
+        $this->assertSame(141, $this->booking->photos()->count());
     }
 
     public function test_actual_s3_signing_keeps_the_attachment_overrides_and_24_hour_expiry(): void
@@ -301,39 +239,7 @@ class PhotoDeliveryTest extends TestCase
         }
     }
 
-    public function test_non_ascii_zip_filenames_and_contents_are_preserved(): void
-    {
-        $photo = BookingPhoto::orderBy('id')->first();
-        $photo->update(['filename' => 'Été-family.jpg']);
-        $response = $this->postJson('/my-photos/download-all', ['booking_number' => $this->booking->booking_number, 'delivery_code' => 'ABC123'])->assertOk();
-        $zip = new \ZipArchive;
-        $zip->open($response->getFile()->getPathname());
-        $this->assertSame('01-Été-family.jpg', $zip->getNameIndex(0));
-        $this->assertSame('fake-image-1', $zip->getFromIndex(0));
-        $zip->close();
-        $this->sendZip($response);
-    }
-
-    public function test_download_all_with_invalid_credentials_returns_422(): void
-    {
-        $this->postJson(route('my-photos.download-all'), [
-            'booking_number' => $this->booking->booking_number,
-            'delivery_code' => 'WRONG99',
-        ])
-            ->assertStatus(422)
-            ->assertJson(['success' => false]);
-    }
-
-    public function test_download_all_with_missing_fields_returns_422(): void
-    {
-        $this->postJson(route('my-photos.download-all'), [
-            'booking_number' => $this->booking->booking_number,
-        ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['delivery_code']);
-    }
-
-    public function test_download_all_without_photos_returns_422(): void
+    public function test_lookup_without_photos_redirects_with_error(): void
     {
         $booking = Booking::create([
             'name' => 'No Photos Tourist',
@@ -344,11 +250,11 @@ class PhotoDeliveryTest extends TestCase
             'delivery_code' => 'XYZ789',
         ]);
 
-        $this->postJson(route('my-photos.download-all'), [
+        $this->post(route('my-photos.lookup'), [
             'booking_number' => $booking->booking_number,
             'delivery_code' => 'XYZ789',
         ])
-            ->assertStatus(422)
-            ->assertJson(['success' => false]);
+            ->assertRedirect()
+            ->assertSessionHas('lookup_error');
     }
 }

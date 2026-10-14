@@ -15,7 +15,7 @@
         @keydown.escape.window="if (modalOpen) closeModal()"
     @endif
 >
-    @include('partials.packages-section')
+    @include('partials.packages-section', ['compactTop' => true])
     @include('partials.book-session')
 </div>
 @endsection

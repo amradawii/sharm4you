@@ -57,15 +57,11 @@ class Review extends Model
         };
     }
 
-    public function getFlagAttribute(): string
+    public function getFlagCodeAttribute(): string
     {
-        $code = strtoupper((string) $this->country_code);
-        if (strlen($code) !== 2) {
-            return '';
-        }
+        $code = strtolower((string) $this->country_code);
 
-        return mb_chr(0x1F1E6 + (ord($code[0]) - ord('A')), 'UTF-8')
-            .mb_chr(0x1F1E6 + (ord($code[1]) - ord('A')), 'UTF-8');
+        return strlen($code) === 2 ? $code : '';
     }
 
     /* ── Scopes ── */
